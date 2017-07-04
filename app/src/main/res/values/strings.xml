@@ -1,5 +1,4 @@
 <resources>
-
     <string name="app_name">二維條碼掃描</string>
     <string name="placeHolder">placeHolder</string>
     <string name="seekbar_add">+</string>

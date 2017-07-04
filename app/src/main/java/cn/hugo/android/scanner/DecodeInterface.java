@@ -13,15 +13,15 @@ import cn.hugo.android.scanner.view.ViewfinderView;
  * Created by Neo on 2016/9/17 017.
  */
 public interface DecodeInterface {
-    Context getContext();
+	Context getContext();
 
-    CameraManager getCameraManager();
+	CameraManager getCameraManager();
 
-    ViewfinderView getViewfinderView();
+	ViewfinderView getViewfinderView();
 
-    Handler getHandler();
+	Handler getHandler();
 
-    void handleDecode(Result rawResult, Bitmap barcode, float scaleFactor);
+	void handleDecode(Result rawResult, Bitmap barcode, float scaleFactor);
 
-    void drawViewfinder();
+	void drawViewfinder();
 }

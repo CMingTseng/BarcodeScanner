@@ -50,20 +50,20 @@ public class InactivityTimer {
      * 接受系統廣播：手機是否連通電源
      */
     private final BroadcastReceiver mPowerStatusReceiver;
-    private boolean registered;
-    private AsyncTask<?, ?, ?> inactivityTask;
+    private boolean mRegistered;
+    private AsyncTask<?, ?, ?> mInactivityTask;
 
     public InactivityTimer(Activity activity) {
         this.mActivity = activity;
         mPowerStatusReceiver = new PowerStatusReceiver();
-        registered = false;
+        mRegistered = false;
         onActivity();
     }
 
     public InactivityTimer(Context context) {
         this.mActivity = (Activity) context;
         mPowerStatusReceiver = new PowerStatusReceiver();
-        registered = false;
+        mRegistered = false;
         onActivity();
     }
 
@@ -72,27 +72,26 @@ public class InactivityTimer {
      */
     public synchronized void onActivity() {
         cancel();
-        inactivityTask = new InactivityAsyncTask();
-        Runnable.execAsync(inactivityTask);
+        mInactivityTask = new InactivityAsyncTask();
+        Runnable.execAsync(mInactivityTask);
     }
 
     public synchronized void onPause() {
         cancel();
-        if (registered) {
+        if (mRegistered) {
             mActivity.unregisterReceiver(mPowerStatusReceiver);
-            registered = false;
+            mRegistered = false;
         } else {
-            Log.w(TAG, "PowerStatusReceiver was never registered?");
+            Log.w(TAG, "PowerStatusReceiver was never mRegistered?");
         }
     }
 
     public synchronized void onResume() {
-        if (registered) {
-            Log.w(TAG, "PowerStatusReceiver was already registered?");
+        if (mRegistered) {
+            Log.w(TAG, "PowerStatusReceiver was already mRegistered?");
         } else {
-            mActivity.registerReceiver(mPowerStatusReceiver, new IntentFilter(
-                    Intent.ACTION_BATTERY_CHANGED));
-            registered = true;
+            mActivity.registerReceiver(mPowerStatusReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            mRegistered = true;
         }
         onActivity();
     }
@@ -101,10 +100,10 @@ public class InactivityTimer {
      * 取消監控任務
      */
     private synchronized void cancel() {
-        AsyncTask<?, ?, ?> task = inactivityTask;
+        AsyncTask<?, ?, ?> task = mInactivityTask;
         if (task != null) {
             task.cancel(true);
-            inactivityTask = null;
+            mInactivityTask = null;
         }
     }
 
@@ -120,8 +119,7 @@ public class InactivityTimer {
         public void onReceive(Context context, Intent intent) {
             if (Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
                 // 0 indicates that we're on battery
-                boolean onBatteryNow = intent.getIntExtra(
-                        BatteryManager.EXTRA_PLUGGED, -1) <= 0;
+                boolean onBatteryNow = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) <= 0;
                 if (onBatteryNow) {
                     InactivityTimer.this.onActivity();
                 } else {
@@ -134,8 +132,7 @@ public class InactivityTimer {
     /**
      * 該任務很簡單，就是在INACTIVITY_DELAY_MS時間後終結activity
      */
-    private final class InactivityAsyncTask extends
-            AsyncTask<Object, Object, Object> {
+    private final class InactivityAsyncTask extends AsyncTask<Object, Object, Object> {
         @Override
         protected Object doInBackground(Object... objects) {
             try {
@@ -148,6 +145,5 @@ public class InactivityTimer {
             return null;
         }
     }
-
 }
 

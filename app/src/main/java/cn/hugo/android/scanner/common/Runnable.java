@@ -11,7 +11,7 @@ import android.os.Build;
  *
  */
 public class Runnable {
-
+    private static final String TAG = Runnable.class.getSimpleName();
     @SuppressLint("NewApi")
     @SuppressWarnings("unchecked")
     public static void execAsync(AsyncTask<?, ?, ?> task) {
@@ -20,8 +20,6 @@ public class Runnable {
         } else {
             task.execute();
         }
-
     }
-
 }
 

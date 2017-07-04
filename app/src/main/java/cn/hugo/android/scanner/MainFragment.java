@@ -26,12 +26,12 @@ import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Map;
 
+import cn.hugo.android.scanner.camera.AmbientLightManager;
+import cn.hugo.android.scanner.camera.BeepManager;
 import cn.hugo.android.scanner.camera.CameraManager;
 import cn.hugo.android.scanner.config.IntentSource;
 import cn.hugo.android.scanner.decode.CaptureActivityHandler;
-import cn.hugo.android.scanner.utils.AmbientLightManager;
-import cn.hugo.android.scanner.utils.BeepManager;
-import cn.hugo.android.scanner.utils.DecodeInterface;
+import cn.hugo.android.scanner.decode.DecodeInterface;
 import cn.hugo.android.scanner.utils.FinishListener;
 import cn.hugo.android.scanner.utils.InactivityTimer;
 import cn.hugo.android.scanner.view.ViewfinderView;

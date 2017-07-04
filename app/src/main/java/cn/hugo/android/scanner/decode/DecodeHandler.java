@@ -35,27 +35,22 @@ import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
 import cn.hugo.android.scanner.R;
-import cn.hugo.android.scanner.utils.DecodeInterface;
 
-final class DecodeHandler extends Handler {
-
+public class DecodeHandler extends Handler {
     private static final String TAG = DecodeHandler.class.getSimpleName();
-
     private DecodeInterface activity;
+    private final MultiFormatReader mMultiFormatReader;
+    private boolean mRunning = true;
 
-    private final MultiFormatReader multiFormatReader;
-
-    private boolean running = true;
-
-    DecodeHandler(DecodeInterface activity, Map<DecodeHintType, Object> hints) {
-        multiFormatReader = new MultiFormatReader();
-        multiFormatReader.setHints(hints);
+    public DecodeHandler(DecodeInterface activity, Map<DecodeHintType, Object> hints) {
+        mMultiFormatReader = new MultiFormatReader();
+        mMultiFormatReader.setHints(hints);
         this.activity = activity;
     }
 
     @Override
     public void handleMessage(Message message) {
-        if (!running) {
+        if (!mRunning) {
             return;
         }
         switch (message.what) {
@@ -63,7 +58,7 @@ final class DecodeHandler extends Handler {
                 decode((byte[]) message.obj, message.arg1, message.arg2);
                 break;
             case R.id.quit:
-                running = false;
+                mRunning = false;
                 Looper.myLooper().quit();
                 break;
         }
@@ -81,7 +76,6 @@ final class DecodeHandler extends Handler {
     private void decode(byte[] data, int width, int height) {
         long start = System.currentTimeMillis();
         Result rawResult = null;
-
 		byte[] rotatedData = new byte[data.length];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++)
@@ -90,18 +84,16 @@ final class DecodeHandler extends Handler {
         int tmp = width;
         width = height;
         height = tmp;
-
-        PlanarYUVLuminanceSource source = activity.getCameraManager()
-                .buildLuminanceSource(rotatedData, width, height);
+        PlanarYUVLuminanceSource source = activity.getCameraManager().buildLuminanceSource(rotatedData, width, height);
         if (source != null) {
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
             try {
                 // 預覽介面最終取到的是個bitmap，然後對其進行解碼
-                rawResult = multiFormatReader.decodeWithState(bitmap);
+                rawResult = mMultiFormatReader.decodeWithState(bitmap);
             } catch (ReaderException re) {
                 // continue
             } finally {
-                multiFormatReader.reset();
+                mMultiFormatReader.reset();
             }
         }
 
@@ -111,8 +103,7 @@ final class DecodeHandler extends Handler {
             long end = System.currentTimeMillis();
             Log.d(TAG, "Found barcode in " + (end - start) + " ms");
             if (handler != null) {
-                Message message = Message.obtain(handler,
-                        R.id.decode_succeeded, rawResult);
+                Message message = Message.obtain(handler, R.id.decode_succeeded, rawResult);
                 Bundle bundle = new Bundle();
                 bundleThumbnail(source, bundle);
                 message.setData(bundle);
@@ -126,19 +117,15 @@ final class DecodeHandler extends Handler {
         }
     }
 
-    private static void bundleThumbnail(PlanarYUVLuminanceSource source,
-                                        Bundle bundle) {
+    private static void bundleThumbnail(PlanarYUVLuminanceSource source, Bundle bundle) {
         int[] pixels = source.renderThumbnail();
         int width = source.getThumbnailWidth();
         int height = source.getThumbnailHeight();
-        Bitmap bitmap = Bitmap.createBitmap(pixels, 0, width, width, height,
-                Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap(pixels, 0, width, width, height, Bitmap.Config.ARGB_8888);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 50, out);
         bundle.putByteArray(DecodeThread.BARCODE_BITMAP, out.toByteArray());
-        bundle.putFloat(DecodeThread.BARCODE_SCALED_FACTOR, (float) width
-                / source.getWidth());
+        bundle.putFloat(DecodeThread.BARCODE_SCALED_FACTOR, (float) width / source.getWidth());
     }
-
 }
 

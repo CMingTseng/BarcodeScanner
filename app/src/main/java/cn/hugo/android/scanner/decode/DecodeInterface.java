@@ -1,4 +1,4 @@
-package cn.hugo.android.scanner.utils;
+package cn.hugo.android.scanner.decode;
 
 import com.google.zxing.Result;
 

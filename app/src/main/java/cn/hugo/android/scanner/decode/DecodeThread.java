@@ -33,38 +33,32 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import cn.hugo.android.scanner.config.Config;
-import cn.hugo.android.scanner.utils.DecodeInterface;
 
 /**
  * This thread does all the heavy lifting of decoding the images.
  *
  * @author dswitkin@google.com (Daniel Switkin)
  */
-final class DecodeThread extends Thread {
-
+public class DecodeThread extends Thread {
+    private static final String TAG = DecodeThread.class.getSimpleName();
     public static final String BARCODE_BITMAP = "barcode_bitmap";
 
     public static final String BARCODE_SCALED_FACTOR = "barcode_scaled_factor";
 
     private final DecodeInterface activity;
 
-    private final Map<DecodeHintType, Object> hints;
+    private final Map<DecodeHintType, Object> mHints;
 
-    private Handler handler;
+    private Handler mHandler;
 
-    private final CountDownLatch handlerInitLatch;
+    private final CountDownLatch mHandlerInitLatch;
 
-    DecodeThread(DecodeInterface activity,
-                 Collection<BarcodeFormat> decodeFormats,
-                 Map<DecodeHintType, ?> baseHints, String characterSet,
-                 ResultPointCallback resultPointCallback) {
-
+    public DecodeThread(DecodeInterface activity, Collection<BarcodeFormat> decodeFormats, Map<DecodeHintType, ?> baseHints, String characterSet, ResultPointCallback resultPointCallback) {
         this.activity = activity;
-        handlerInitLatch = new CountDownLatch(1);
-
-        hints = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
+        mHandlerInitLatch = new CountDownLatch(1);
+        mHints = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
         if (baseHints != null) {
-            hints.putAll(baseHints);
+            mHints.putAll(baseHints);
         }
 
         // The prefs can't change while the thread is running, so pick them up
@@ -78,36 +72,33 @@ final class DecodeThread extends Thread {
             if (prefs.getBoolean(Config.KEY_DECODE_QR, false)) {
                 decodeFormats.addAll(DecodeFormatManager.QR_CODE_FORMATS);
             }
-            if (prefs.getBoolean(Config.KEY_DECODE_DATA_MATRIX,
-                    false)) {
+            if (prefs.getBoolean(Config.KEY_DECODE_DATA_MATRIX, false)) {
                 decodeFormats.addAll(DecodeFormatManager.DATA_MATRIX_FORMATS);
             }
         }
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, decodeFormats);
+        mHints.put(DecodeHintType.POSSIBLE_FORMATS, decodeFormats);
 
         if (characterSet != null) {
-            hints.put(DecodeHintType.CHARACTER_SET, characterSet);
+            mHints.put(DecodeHintType.CHARACTER_SET, characterSet);
         }
-        hints.put(DecodeHintType.NEED_RESULT_POINT_CALLBACK,
-                resultPointCallback);
-        Log.i("DecodeThread", "Hints: " + hints);
+        mHints.put(DecodeHintType.NEED_RESULT_POINT_CALLBACK, resultPointCallback);
+        Log.i("DecodeThread", "Hints: " + mHints);
     }
 
     Handler getHandler() {
         try {
-            handlerInitLatch.await();
+            mHandlerInitLatch.await();
         } catch (InterruptedException ie) {
             // continue?
         }
-        return handler;
+        return mHandler;
     }
 
     @Override
     public void run() {
         Looper.prepare();
-        handler = new DecodeHandler(activity, hints);
-        handlerInitLatch.countDown();
+        mHandler = new DecodeHandler(activity, mHints);
+        mHandlerInitLatch.countDown();
         Looper.loop();
     }
-
 }

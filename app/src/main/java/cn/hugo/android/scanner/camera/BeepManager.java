@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.hugo.android.scanner.utils;
+package cn.hugo.android.scanner.camera;
 
 import android.app.Activity;
 import android.content.Context;
@@ -39,19 +39,19 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
     private static final float BEEP_VOLUME = 0.10f;
     private static final long VIBRATE_DURATION = 200L;
     private final Activity mActivity;
-    private MediaPlayer mediaPlayer;
-    private boolean playBeep;
-    private boolean vibrate;
+    private MediaPlayer mMediaPlayer;
+    private boolean mPlayBeep;
+    private boolean mVibrate;
 
     public BeepManager(Activity activity) {
         this.mActivity = activity;
-        this.mediaPlayer = null;
+        this.mMediaPlayer = null;
         updatePrefs();
     }
 
     public BeepManager(Context context) {
         this.mActivity = (Activity) context;
-        this.mediaPlayer = null;
+        this.mMediaPlayer = null;
         updatePrefs();
     }
 
@@ -59,16 +59,15 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
      * 掃描成功後可以播放提示音並震動，這兩種功能都是用戶自定義的 在Barcode Scanner中點擊功能表鍵，點設置即可看到這兩項的設置
      */
     public synchronized void updatePrefs() {
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(mActivity);
-        playBeep = shouldBeep(prefs, mActivity);
-        vibrate = prefs.getBoolean(Config.KEY_VIBRATE, false);
-        if (playBeep && mediaPlayer == null) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
+        mPlayBeep = shouldBeep(prefs, mActivity);
+        mVibrate = prefs.getBoolean(Config.KEY_VIBRATE, false);
+        if (mPlayBeep && mMediaPlayer == null) {
             // The volume on STREAM_SYSTEM is not adjustable, and users found it
             // too loud,
             // so we now play on the music stream.
             mActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-            mediaPlayer = buildMediaPlayer(mActivity);
+            mMediaPlayer = buildMediaPlayer(mActivity);
         }
     }
 
@@ -76,12 +75,11 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
      * 根據配置播放提示音和震動
      */
     public synchronized void playBeepSoundAndVibrate() {
-        if (playBeep && mediaPlayer != null) {
-            mediaPlayer.start();
+        if (mPlayBeep && mMediaPlayer != null) {
+            mMediaPlayer.start();
         }
-        if (vibrate) {
-            Vibrator vibrator = (Vibrator) mActivity
-                    .getSystemService(Context.VIBRATOR_SERVICE);
+        if (mVibrate) {
+            Vibrator vibrator = (Vibrator) mActivity.getSystemService(Context.VIBRATOR_SERVICE);
             vibrator.vibrate(VIBRATE_DURATION);
         }
     }
@@ -90,8 +88,7 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
         boolean shouldPlayBeep = prefs.getBoolean(Config.KEY_PLAY_BEEP, true);
         if (shouldPlayBeep) {
             // See if sound settings overrides this
-            AudioManager audioService = (AudioManager) activity
-                    .getSystemService(Context.AUDIO_SERVICE);
+            AudioManager audioService = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
             if (audioService.getRingerMode() != AudioManager.RINGER_MODE_NORMAL) {
                 shouldPlayBeep = false;
             }
@@ -104,12 +101,9 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mediaPlayer.setOnCompletionListener(this);
         mediaPlayer.setOnErrorListener(this);
-
-        AssetFileDescriptor file = activity.getResources().openRawResourceFd(
-                R.raw.beep);
+        AssetFileDescriptor file = activity.getResources().openRawResourceFd(R.raw.beep);
         try {
-            mediaPlayer.setDataSource(file.getFileDescriptor(),
-                    file.getStartOffset(), file.getLength());
+            mediaPlayer.setDataSource(file.getFileDescriptor(), file.getStartOffset(), file.getLength());
             file.close();
             mediaPlayer.setVolume(BEEP_VOLUME, BEEP_VOLUME);
             mediaPlayer.prepare();
@@ -135,7 +129,7 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
         } else {
             // possibly media player error, so release and recreate
             mp.release();
-            mediaPlayer = null;
+            mMediaPlayer = null;
             updatePrefs();
         }
         return true;
@@ -146,11 +140,10 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
      * 關閉beep聲音
      */
     public synchronized void close() {
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
+        if (mMediaPlayer != null) {
+            mMediaPlayer.release();
+            mMediaPlayer = null;
         }
     }
-
 }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.hugo.android.scanner.utils;
+package cn.hugo.android.scanner.camera;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -24,9 +24,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.preference.PreferenceManager;
 
-import cn.hugo.android.scanner.camera.CameraManager;
-import cn.hugo.android.scanner.camera.FrontLightMode;
-
 /**
  * Detects ambient light and switches on the front light when very dark, and off
  * again when sufficiently light.
@@ -35,17 +32,16 @@ import cn.hugo.android.scanner.camera.FrontLightMode;
  * @author Nikolaus Huber
  */
 public class AmbientLightManager implements SensorEventListener {
-
+    private static final String TAG = AmbientLightManager.class.getSimpleName();
     private static final float TOO_DARK_LUX = 45.0f;
     private static final float BRIGHT_ENOUGH_LUX = 450.0f;
-
     private final Context mContext;
     private CameraManager mCameraManager;
 
     /**
      * 光感測器
      */
-    private Sensor lightSensor;
+    private Sensor mLightSensor;
 
     public AmbientLightManager(Context context) {
         this.mContext = context;
@@ -53,26 +49,22 @@ public class AmbientLightManager implements SensorEventListener {
 
     public void start(CameraManager cameraManager) {
         this.mCameraManager = cameraManager;
-        SharedPreferences sharedPrefs = PreferenceManager
-                .getDefaultSharedPreferences(mContext);
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         if (FrontLightMode.readPref(sharedPrefs) == FrontLightMode.AUTO) {
-            SensorManager sensorManager = (SensorManager) mContext
-                    .getSystemService(Context.SENSOR_SERVICE);
-            lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
-            if (lightSensor != null) {
-                sensorManager.registerListener(this, lightSensor,
-                        SensorManager.SENSOR_DELAY_NORMAL);
+            SensorManager sensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
+            mLightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+            if (mLightSensor != null) {
+                sensorManager.registerListener(this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
             }
         }
     }
 
     public void stop() {
-        if (lightSensor != null) {
-            SensorManager sensorManager = (SensorManager) mContext
-                    .getSystemService(Context.SENSOR_SERVICE);
+        if (mLightSensor != null) {
+            SensorManager sensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
             sensorManager.unregisterListener(this);
             mCameraManager = null;
-            lightSensor = null;
+            mLightSensor = null;
         }
     }
 
@@ -95,6 +87,5 @@ public class AmbientLightManager implements SensorEventListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // do nothing
     }
-
 }
 

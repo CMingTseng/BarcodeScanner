@@ -15,40 +15,33 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 /**
- * 從bitmap解碼
+ * 從file to bitmap解碼
  *
  * @author hugo
  *
  */
 public class BitmapDecoder {
-
-    MultiFormatReader multiFormatReader;
+    private static final String TAG = BitmapDecoder.class.getSimpleName();
+    MultiFormatReader mMultiFormatReader;
 
     public BitmapDecoder(Context context) {
-
-        multiFormatReader = new MultiFormatReader();
-
+        mMultiFormatReader = new MultiFormatReader();
         // 解碼的參數
-        Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>(
-                2);
+        Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>(2);
         // 可以解析的編碼類型
         Vector<BarcodeFormat> decodeFormats = new Vector<BarcodeFormat>();
         if (decodeFormats == null || decodeFormats.isEmpty()) {
             decodeFormats = new Vector<BarcodeFormat>();
-
             // 這裏設置可掃描的類型，我這裏選擇了都支持
             decodeFormats.addAll(DecodeFormatManager.ONE_D_FORMATS);
             decodeFormats.addAll(DecodeFormatManager.QR_CODE_FORMATS);
             decodeFormats.addAll(DecodeFormatManager.DATA_MATRIX_FORMATS);
         }
         hints.put(DecodeHintType.POSSIBLE_FORMATS, decodeFormats);
-
         // 設置繼續的字元編碼格式為UTF8
         hints.put(DecodeHintType.CHARACTER_SET, "UTF8");
-
         // 設置解析配置參數
-        multiFormatReader.setHints(hints);
-
+        mMultiFormatReader.setHints(hints);
     }
 
     /**
@@ -58,14 +51,12 @@ public class BitmapDecoder {
         if (bitmap == null) {
             return null;
         }
-
 		try {
-            return multiFormatReader.decodeWithState(new BinaryBitmap(
+            return mMultiFormatReader.decodeWithState(new BinaryBitmap(
                     new HybridBinarizer(new BitmapLuminanceSource(bitmap))));
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-
         return null;
     }
 }

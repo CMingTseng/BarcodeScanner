@@ -20,16 +20,15 @@ import com.google.zxing.ResultPoint;
 import com.google.zxing.ResultPointCallback;
 
 public final class ViewfinderResultPointCallback implements ResultPointCallback {
-
-    private final ViewfinderView viewfinderView;
+    private static final String TAG = ViewfinderResultPointCallback.class.getSimpleName();
+    private final ViewfinderView mViewfinderView;
 
     public ViewfinderResultPointCallback(ViewfinderView viewfinderView) {
-        this.viewfinderView = viewfinderView;
+        this.mViewfinderView = viewfinderView;
     }
 
     @Override
     public void foundPossibleResultPoint(ResultPoint point) {
-        viewfinderView.addPossibleResultPoint(point);
+        mViewfinderView.addPossibleResultPoint(point);
     }
-
 }

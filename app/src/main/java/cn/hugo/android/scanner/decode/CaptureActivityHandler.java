@@ -34,7 +34,6 @@ import java.util.Map;
 
 import cn.hugo.android.scanner.R;
 import cn.hugo.android.scanner.camera.CameraManager;
-import cn.hugo.android.scanner.utils.DecodeInterface;
 import cn.hugo.android.scanner.view.ViewfinderResultPointCallback;
 
 /**
@@ -44,20 +43,16 @@ import cn.hugo.android.scanner.view.ViewfinderResultPointCallback;
  * @author dswitkin@google.com (Daniel Switkin)
  */
 public final class CaptureActivityHandler extends Handler {
-
     private static final String TAG = CaptureActivityHandler.class.getSimpleName();
-
     private DecodeInterface activity;
-
-
     /**
      * 真正負責掃描任務的核心線程
      */
-    private final DecodeThread decodeThread;
+    private final DecodeThread mDecodethread;
 
-    private State state;
+    private State mState;
 
-    private final CameraManager cameraManager;
+    private final CameraManager mCameraManager;
 
     /**
      * 當前掃描的狀態
@@ -77,26 +72,16 @@ public final class CaptureActivityHandler extends Handler {
         DONE
     }
 
-    public CaptureActivityHandler(DecodeInterface activity,
-                                  Collection<BarcodeFormat> decodeFormats,
-                                  Map<DecodeHintType, ?> baseHints, String characterSet,
-                                  CameraManager cameraManager) {
+    public CaptureActivityHandler(DecodeInterface activity, Collection<BarcodeFormat> decodeFormats, Map<DecodeHintType, ?> baseHints, String characterSet, CameraManager cameraManager) {
         this.activity = activity;
-
         // 啟動掃描線程
-        decodeThread = new DecodeThread(activity, decodeFormats, baseHints,
-                characterSet, new ViewfinderResultPointCallback(
-                activity.getViewfinderView()));
-        decodeThread.start();
-
-        state = State.SUCCESS;
-
+        mDecodethread = new DecodeThread(activity, decodeFormats, baseHints, characterSet, new ViewfinderResultPointCallback(activity.getViewfinderView()));
+        mDecodethread.start();
+        mState = State.SUCCESS;
         // Start ourselves capturing previews and decoding.
-        this.cameraManager = cameraManager;
-
+        this.mCameraManager = cameraManager;
         // 開啟相機預覽介面
         cameraManager.startPreview();
-
         restartPreviewAndDecode();
     }
 
@@ -109,22 +94,18 @@ public final class CaptureActivityHandler extends Handler {
                 break;
             case R.id.decode_succeeded:
                 Log.d(TAG, "Got decode succeeded message");
-                state = State.SUCCESS;
+                mState = State.SUCCESS;
                 Bundle bundle = message.getData();
                 Bitmap barcode = null;
                 float scaleFactor = 1.0f;
                 if (bundle != null) {
-                    byte[] compressedBitmap = bundle
-                            .getByteArray(DecodeThread.BARCODE_BITMAP);
+                    byte[] compressedBitmap = bundle.getByteArray(DecodeThread.BARCODE_BITMAP);
                     if (compressedBitmap != null) {
-                        barcode = BitmapFactory.decodeByteArray(
-                                compressedBitmap, 0, compressedBitmap.length,
-                                null);
+                        barcode = BitmapFactory.decodeByteArray(compressedBitmap, 0, compressedBitmap.length, null);
                         // Mutable copy:
                         barcode = barcode.copy(Bitmap.Config.ARGB_8888, true);
                     }
-                    scaleFactor = bundle
-                            .getFloat(DecodeThread.BARCODE_SCALED_FACTOR);
+                    scaleFactor = bundle.getFloat(DecodeThread.BARCODE_SCALED_FACTOR);
                 }
 
                 //FIXME
@@ -134,9 +115,8 @@ public final class CaptureActivityHandler extends Handler {
             case R.id.decode_failed:
                 // We're decoding as fast as possible, so when one decode fails,
                 // start another.
-                state = State.PREVIEW;
-                cameraManager.requestPreviewFrame(decodeThread.getHandler(),
-                        R.id.decode);
+                mState = State.PREVIEW;
+                mCameraManager.requestPreviewFrame(mDecodethread.getHandler(), R.id.decode);
                 break;
             case R.id.return_scan_result: //FIXME
                 Log.d(TAG, "Got return scan result message");
@@ -146,7 +126,6 @@ public final class CaptureActivityHandler extends Handler {
             case R.id.launch_product_query:
                 Log.d(TAG, "Got product query message");
                 String url = (String) message.obj;
-
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
                 intent.setData(Uri.parse(url));
@@ -183,15 +162,15 @@ public final class CaptureActivityHandler extends Handler {
     }
 
     public void quitSynchronously() {
-        state = State.DONE;
-        cameraManager.stopPreview();
-        Message quit = Message.obtain(decodeThread.getHandler(), R.id.quit);
+        mState = State.DONE;
+        mCameraManager.stopPreview();
+        Message quit = Message.obtain(mDecodethread.getHandler(), R.id.quit);
         quit.sendToTarget();
 
         try {
             // Wait at most half a second; should be enough time, and onPause()
             // will timeout quickly
-            decodeThread.join(500L);
+            mDecodethread.join(500L);
         } catch (InterruptedException e) {
             // continue
         }
@@ -205,16 +184,13 @@ public final class CaptureActivityHandler extends Handler {
      * 完成一次掃描後，只需要再調用此方法即可
      */
     private void restartPreviewAndDecode() {
-        if (state == State.SUCCESS) {
-            state = State.PREVIEW;
-
+        if (mState == State.SUCCESS) {
+            mState = State.PREVIEW;
             // 向decodeThread綁定的handler（DecodeHandler)發送解碼消息
-            cameraManager.requestPreviewFrame(decodeThread.getHandler(),
-                    R.id.decode);
+            mCameraManager.requestPreviewFrame(mDecodethread.getHandler(), R.id.decode);
             //FIXME
             activity.drawViewfinder();
         }
 	}
-
 }
 

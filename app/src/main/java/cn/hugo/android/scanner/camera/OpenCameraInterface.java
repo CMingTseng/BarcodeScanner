@@ -22,19 +22,13 @@ import android.util.Log;
 /**
  * 該類用於檢測手機上攝像頭的個數，如果有兩個攝像頭，則取背面的攝像頭
  */
-public final class OpenCameraInterface {
-
+public class OpenCameraInterface {
     private static final String TAG = OpenCameraInterface.class.getName();
-
-    private OpenCameraInterface() {
-    }
-
     /**
      * Opens a rear-facing camera with {@link Camera#open(int)}, if one exists,
      * or opens camera 0.
      */
     public static Camera open() {
-
         int numCameras = Camera.getNumberOfCameras();
         if (numCameras == 0) {
             Log.w(TAG, "No cameras!");
@@ -60,9 +54,7 @@ public final class OpenCameraInterface {
             Log.i(TAG, "No camera facing back; returning camera #0");
             camera = Camera.open(0);
         }
-
         return camera;
     }
-
 }
 

@@ -25,39 +25,35 @@ import android.util.Log;
 /**
  * 該類的作用是在預覽介面載入好後向ui線程發消息
  */
-final class PreviewCallback implements Camera.PreviewCallback {
-
+public class PreviewCallback implements Camera.PreviewCallback {
     private static final String TAG = PreviewCallback.class.getSimpleName();
-
-    private final CameraConfigurationManager configManager;
+    private final CameraConfigurationManager mCameraConfigurationManager;
     private Handler previewHandler;
     private int previewMessage;
 
-    PreviewCallback(CameraConfigurationManager configManager) {
-        this.configManager = configManager;
+    public PreviewCallback(CameraConfigurationManager configurationManager) {
+        this.mCameraConfigurationManager = configurationManager;
     }
 
     /**
      * 綁定handler，用於發消息到ui線程
      */
-    void setHandler(Handler previewHandler, int previewMessage) {
+    public void setHandler(Handler previewHandler, int previewMessage) {
         this.previewHandler = previewHandler;
         this.previewMessage = previewMessage;
     }
 
 	@Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        Point cameraResolution = configManager.getCameraResolution();
+        Point cameraResolution = mCameraConfigurationManager.getCameraResolution();
         Handler thePreviewHandler = previewHandler;
         if (cameraResolution != null && thePreviewHandler != null) {
-            Message message = thePreviewHandler.obtainMessage(previewMessage, cameraResolution.x, cameraResolution.y,
-                    data);
+            Message message = thePreviewHandler.obtainMessage(previewMessage, cameraResolution.x, cameraResolution.y, data);
             message.sendToTarget();
             previewHandler = null;
         } else {
             Log.d(TAG, "Got preview callback, but no handler or resolution available");
         }
     }
-
 }
 

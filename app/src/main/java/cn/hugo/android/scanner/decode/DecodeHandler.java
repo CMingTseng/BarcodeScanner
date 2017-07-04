@@ -34,20 +34,20 @@ import android.util.Log;
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
-import cn.hugo.android.scanner.CaptureActivity;
+import cn.hugo.android.scanner.DecodeInterface;
 import cn.hugo.android.scanner.R;
 
 final class DecodeHandler extends Handler {
 
     private static final String TAG = DecodeHandler.class.getSimpleName();
 
-    private final CaptureActivity activity;
+    private DecodeInterface activity;
 
     private final MultiFormatReader multiFormatReader;
 
     private boolean running = true;
 
-    DecodeHandler(CaptureActivity activity, Map<DecodeHintType, Object> hints) {
+    DecodeHandler(DecodeInterface activity, Map<DecodeHintType, Object> hints) {
         multiFormatReader = new MultiFormatReader();
         multiFormatReader.setHints(hints);
         this.activity = activity;
@@ -82,7 +82,7 @@ final class DecodeHandler extends Handler {
         long start = System.currentTimeMillis();
         Result rawResult = null;
 
-        byte[] rotatedData = new byte[data.length];
+		byte[] rotatedData = new byte[data.length];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++)
                 rotatedData[x * height + height - y - 1] = data[x + y * width];
@@ -96,7 +96,7 @@ final class DecodeHandler extends Handler {
         if (source != null) {
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
             try {
-                // 预览界面最终取到的是个bitmap，然后对其进行解码
+                // 預覽介面最終取到的是個bitmap，然後對其進行解碼
                 rawResult = multiFormatReader.decodeWithState(bitmap);
             } catch (ReaderException re) {
                 // continue
@@ -141,3 +141,4 @@ final class DecodeHandler extends Handler {
     }
 
 }
+

@@ -114,10 +114,12 @@ public final class Intents {
         public static final String PROMPT_MESSAGE = "PROMPT_MESSAGE";
 
         /**
-         * If a barcode is found, Barcodes returns {@link android.app.Activity#RESULT_OK} to {@link
-         * android.app.Activity#onActivityResult(int, int, android.content.Intent)} of the app which
-         * requested the scan via {@link android.app.Activity#startActivityForResult(android.content.Intent,
-         * int)} The barcodes contents can be retrieved with {@link android.content.Intent#getStringExtra(String)}.
+         * If a barcode is found, Barcodes returns {@link android.app.Activity#RESULT_OK} to
+         * {@link android.app.Activity#onActivityResult(int, int, android.content.Intent)}
+         * of the app which requested the scan via
+         * {@link android.app.Activity#startActivityForResult(android.content.Intent, int)}
+         * The barcodes contents can be retrieved with
+         * {@link android.content.Intent#getStringExtra(String)}.
          * If the user presses Back, the result code will be {@link android.app.Activity#RESULT_CANCELED}.
          */
         public static final String RESULT = "SCAN_RESULT";
@@ -130,10 +132,10 @@ public final class Intents {
         public static final String RESULT_FORMAT = "SCAN_RESULT_FORMAT";
 
         /**
-         * Call {@link android.content.Intent#getStringExtra(String)} with {@link
-         * #RESULT_UPC_EAN_EXTENSION} to return the content of any UPC extension barcode that was
-         * also found. Only applicable to {@link com.google.zxing.BarcodeFormat#UPC_A} and {@link
-         * com.google.zxing.BarcodeFormat#EAN_13} formats.
+         * Call {@link android.content.Intent#getStringExtra(String)} with {@link #RESULT_UPC_EAN_EXTENSION}
+         * to return the content of any UPC extension barcode that was also found. Only applicable
+         * to {@link com.google.zxing.BarcodeFormat#UPC_A} and {@link com.google.zxing.BarcodeFormat#EAN_13}
+         * formats.
          */
         public static final String RESULT_UPC_EAN_EXTENSION = "SCAN_RESULT_UPC_EAN_EXTENSION";
 
@@ -144,31 +146,27 @@ public final class Intents {
         public static final String RESULT_BYTES = "SCAN_RESULT_BYTES";
 
         /**
-         * Key for the value of {@link com.google.zxing.ResultMetadataType#ORIENTATION}, if
-         * available. Call {@link android.content.Intent#getIntArrayExtra(String)} with {@link
-         * #RESULT_ORIENTATION}.
+         * Key for the value of {@link com.google.zxing.ResultMetadataType#ORIENTATION}, if available.
+         * Call {@link android.content.Intent#getIntArrayExtra(String)} with {@link #RESULT_ORIENTATION}.
          */
         public static final String RESULT_ORIENTATION = "SCAN_RESULT_ORIENTATION";
 
         /**
-         * Key for the value of {@link com.google.zxing.ResultMetadataType#ERROR_CORRECTION_LEVEL},
-         * if available. Call {@link android.content.Intent#getStringExtra(String)} with {@link
-         * #RESULT_ERROR_CORRECTION_LEVEL}.
+         * Key for the value of {@link com.google.zxing.ResultMetadataType#ERROR_CORRECTION_LEVEL}, if available.
+         * Call {@link android.content.Intent#getStringExtra(String)} with {@link #RESULT_ERROR_CORRECTION_LEVEL}.
          */
         public static final String RESULT_ERROR_CORRECTION_LEVEL = "SCAN_RESULT_ERROR_CORRECTION_LEVEL";
 
         /**
          * Prefix for keys that map to the values of {@link com.google.zxing.ResultMetadataType#BYTE_SEGMENTS},
-         * if available. The actual values will be set under a series of keys formed by adding 0, 1,
-         * 2, ... to this prefix. So the first byte segment is under key
-         * "SCAN_RESULT_BYTE_SEGMENTS_0" for example. Call {@link android.content.Intent#getByteArrayExtra(String)}
-         * with these keys.
+         * if available. The actual values will be set under a series of keys formed by adding 0, 1, 2, ...
+         * to this prefix. So the first byte segment is under key "SCAN_RESULT_BYTE_SEGMENTS_0" for example.
+         * Call {@link android.content.Intent#getByteArrayExtra(String)} with these keys.
          */
         public static final String RESULT_BYTE_SEGMENTS_PREFIX = "SCAN_RESULT_BYTE_SEGMENTS_";
 
         /**
-         * Setting this to false will not save scanned codes in the history. Specified as a {@code
-         * boolean}.
+         * Setting this to false will not save scanned codes in the history. Specified as a {@code boolean}.
          */
         public static final String SAVE_HISTORY = "SAVE_HISTORY";
 
@@ -200,21 +198,21 @@ public final class Intents {
         public static final String DATA = "ENCODE_DATA";
 
         /**
-         * The type of data being supplied if the format is QR Code. Use {@link
-         * android.content.Intent#putExtra(String, String)} with one of {@link Contents.Type}.
+         * The type of data being supplied if the format is QR Code. Use
+         * {@link android.content.Intent#putExtra(String, String)} with one of {@link Contents.Type}.
          */
         public static final String TYPE = "ENCODE_TYPE";
 
         /**
-         * The barcode format to be displayed. If this isn't specified or is blank, it defaults to
-         * QR Code. Use {@link android.content.Intent#putExtra(String, String)}, where format is one
-         * of {@link com.google.zxing.BarcodeFormat}.
+         * The barcode format to be displayed. If this isn't specified or is blank,
+         * it defaults to QR Code. Use {@link android.content.Intent#putExtra(String, String)}, where
+         * format is one of {@link com.google.zxing.BarcodeFormat}.
          */
         public static final String FORMAT = "ENCODE_FORMAT";
 
         /**
-         * Normally the contents of the barcode are displayed to the user in a TextView. Setting
-         * this boolean to false will hide that TextView, showing only the encode barcode.
+         * Normally the contents of the barcode are displayed to the user in a TextView. Setting this
+         * boolean to false will hide that TextView, showing only the encode barcode.
          */
         public static final String SHOW_CONTENTS = "ENCODE_SHOW_CONTENTS";
 
@@ -274,7 +272,7 @@ public final class Intents {
          */
         public static final String ACTION = "com.google.zxing.client.android.SHARE";
 
-        private Share() {
-        }
+    private Share() {
     }
+  }
 }

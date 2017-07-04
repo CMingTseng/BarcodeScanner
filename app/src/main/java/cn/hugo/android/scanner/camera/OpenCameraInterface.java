@@ -20,7 +20,7 @@ import android.hardware.Camera;
 import android.util.Log;
 
 /**
- * 该类用于检测手机上摄像头的个数，如果有两个摄像头，则取背面的摄像头
+ * 該類用於檢測手機上攝像頭的個數，如果有兩個攝像頭，則取背面的攝像頭
  */
 public final class OpenCameraInterface {
 
@@ -45,7 +45,7 @@ public final class OpenCameraInterface {
         while (index < numCameras) {
             Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
             Camera.getCameraInfo(index, cameraInfo);
-            // CAMERA_FACING_BACK：手机背面的摄像头
+            // CAMERA_FACING_BACK：手機背面的攝像頭
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
                 break;
             }
@@ -65,3 +65,4 @@ public final class OpenCameraInterface {
     }
 
 }
+

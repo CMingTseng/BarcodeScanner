@@ -23,7 +23,7 @@ import android.os.Message;
 import android.util.Log;
 
 /**
- * 该类的作用是在预览界面加载好后向ui线程发消息
+ * 該類的作用是在預覽介面載入好後向ui線程發消息
  */
 final class PreviewCallback implements Camera.PreviewCallback {
 
@@ -38,14 +38,14 @@ final class PreviewCallback implements Camera.PreviewCallback {
     }
 
     /**
-     * 绑定handler，用于发消息到ui线程
+     * 綁定handler，用於發消息到ui線程
      */
     void setHandler(Handler previewHandler, int previewMessage) {
         this.previewHandler = previewHandler;
         this.previewMessage = previewMessage;
     }
 
-    @Override
+	@Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Point cameraResolution = configManager.getCameraResolution();
         Handler thePreviewHandler = previewHandler;
@@ -60,3 +60,4 @@ final class PreviewCallback implements Camera.PreviewCallback {
     }
 
 }
+

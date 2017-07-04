@@ -30,8 +30,8 @@ import cn.hugo.android.scanner.common.Runnable;
 import cn.hugo.android.scanner.config.Config;
 
 /**
- * 由于对焦不是一次性完成的任务（手抖），而系统提供的对焦仅有Camera.autoFocus()方法，
- * 因此需要一个线程来不断调用Camera.autoFocus()直到用户满意按下快门为止
+ * 由於對焦不是一次性完成的任務（手抖），而系統提供的對焦僅有Camera.autoFocus()方法，
+ * 因此需要一個線程來不斷調用Camera.autoFocus()直到用戶滿意按下快門為止
  */
 final class AutoFocusManager implements Camera.AutoFocusCallback {
 
@@ -119,3 +119,4 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
     }
 
 }
+

@@ -57,7 +57,7 @@ final class BeepManager implements MediaPlayer.OnCompletionListener,
     }
 
     /**
-     * 扫描成功后可以播放提示音并震动，这两种功能都是用户自定义的 在Barcode Scanner中点击菜单键，点设置即可看到这两项的设置
+     * 掃描成功後可以播放提示音並震動，這兩種功能都是用戶自定義的 在Barcode Scanner中點擊功能表鍵，點設置即可看到這兩項的設置
      */
     synchronized void updatePrefs() {
         SharedPreferences prefs = PreferenceManager
@@ -74,7 +74,7 @@ final class BeepManager implements MediaPlayer.OnCompletionListener,
     }
 
     /**
-     * 根据配置播放提示音和震动
+     * 根據配置播放提示音和震動
      */
     synchronized void playBeepSoundAndVibrate() {
         if (playBeep && mediaPlayer != null) {
@@ -144,13 +144,14 @@ final class BeepManager implements MediaPlayer.OnCompletionListener,
 
     /**
      * 新增
-     * 关闭beep声音
+     * 關閉beep聲音
      */
     public synchronized void close() {
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-    }
+	}
 
 }
+

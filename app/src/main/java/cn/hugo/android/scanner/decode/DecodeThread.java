@@ -32,7 +32,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import cn.hugo.android.scanner.CaptureActivity;
+import cn.hugo.android.scanner.DecodeInterface;
 import cn.hugo.android.scanner.config.Config;
 
 /**
@@ -46,7 +46,7 @@ final class DecodeThread extends Thread {
 
     public static final String BARCODE_SCALED_FACTOR = "barcode_scaled_factor";
 
-    private final CaptureActivity activity;
+    private final DecodeInterface activity;
 
     private final Map<DecodeHintType, Object> hints;
 
@@ -54,7 +54,7 @@ final class DecodeThread extends Thread {
 
     private final CountDownLatch handlerInitLatch;
 
-    DecodeThread(CaptureActivity activity,
+    DecodeThread(DecodeInterface activity,
                  Collection<BarcodeFormat> decodeFormats,
                  Map<DecodeHintType, ?> baseHints, String characterSet,
                  ResultPointCallback resultPointCallback) {
@@ -70,8 +70,7 @@ final class DecodeThread extends Thread {
         // The prefs can't change while the thread is running, so pick them up
         // once here.
         if (decodeFormats == null || decodeFormats.isEmpty()) {
-            SharedPreferences prefs = PreferenceManager
-                    .getDefaultSharedPreferences(activity);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity.getContext());
             decodeFormats = EnumSet.noneOf(BarcodeFormat.class);
             if (prefs.getBoolean(Config.KEY_DECODE_1D, false)) {
                 decodeFormats.addAll(DecodeFormatManager.ONE_D_FORMATS);

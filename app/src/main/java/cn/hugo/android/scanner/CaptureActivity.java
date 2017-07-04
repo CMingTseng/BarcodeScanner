@@ -8,17 +8,18 @@ import com.google.zxing.client.result.ResultParser;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -41,13 +42,13 @@ import cn.hugo.android.scanner.view.ViewfinderView;
  * shows feedback as the image processing is happening, and then overlays the
  * results when a scan is successful.
  * <p/>
- * 此Activity所做的事： 1.开启camera，在后台独立线程中完成扫描任务；
- * 2.绘制了一个扫描区（viewfinder）来帮助用户将条码置于其中以准确扫描； 3.扫描成功后会将扫描结果展示在界面上。
+ * 此Activity所做的事： 1.開啟camera，在後臺獨立線程中完成掃描任務；
+ * 2.繪製了一個掃描區（viewfinder）來幫助用戶將條碼置於其中以準確掃描； 3.掃描成功後會將掃描結果展示在介面上。
  *
  * @author dswitkin@google.com (Daniel Switkin)
  * @author Sean Owen
  */
-public final class CaptureActivity extends Activity implements SurfaceHolder.Callback, View.OnClickListener {
+public final class CaptureActivity extends Activity implements DecodeInterface, TextureView.SurfaceTextureListener, View.OnClickListener {
 
     private static final String TAG = CaptureActivity.class.getSimpleName();
 
@@ -57,29 +58,29 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     private static final int PARSE_BARCODE_SUC = 200;
 
     /**
-     * 是否有预览
+     * 是否有預覽
      */
     private boolean hasSurface;
 
     /**
-     * 活动监控器。如果手机没有连接电源线，那么当相机开启后如果一直处于不被使用状态则该服务会将当前activity关闭。
-     * 活动监控器全程监控扫描活跃状态，与CaptureActivity生命周期相同.每一次扫描过后都会重置该监控，即重新倒计时。
+     * 活動監控器。如果手機沒有連接電源線，那麼當相機開啟後如果一直處於不被使用狀態則該服務會將當前activity關閉。
+     * 活動監控器全程監控掃描活躍狀態，與CaptureActivity生命週期相同.每一次掃描過後都會重置該監控，即重新倒計時。
      */
     private InactivityTimer inactivityTimer;
 
     /**
-     * 声音震动管理器。如果扫描成功后可以播放一段音频，也可以震动提醒，可以通过配置来决定扫描成功后的行为。
+     * 聲音震動管理器。如果掃描成功後可以播放一段音頻，也可以震動提醒，可以通過配置來決定掃描成功後的行為。
      */
     private BeepManager beepManager;
 
     /**
-     * 闪光灯调节器。自动检测环境光线强弱并决定是否开启闪光灯
+     * 閃光燈調節器。自動檢測環境光線強弱並決定是否開啟閃光燈
      */
     private AmbientLightManager ambientLightManager;
 
     private CameraManager cameraManager;
     /**
-     * 扫描区域
+     * 掃描區域
      */
     private ViewfinderView viewfinderView;
 
@@ -90,24 +91,24 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     private boolean isFlashlightOpen;
 
     /**
-     * 【辅助解码的参数(用作MultiFormatReader的参数)】 编码类型，该参数告诉扫描器采用何种编码方式解码，即EAN-13，QR
-     * Code等等 对应于DecodeHintType.POSSIBLE_FORMATS类型
-     * 参考DecodeThread构造函数中如下代码：hints.put(DecodeHintType.POSSIBLE_FORMATS,
+     * 【輔助解碼的參數(用作MultiFormatReader的參數)】 編碼類型，該參數告訴掃描器採用何種編碼方式解碼，即EAN-13，QR
+     * Code等等 對應於DecodeHintType.POSSIBLE_FORMATS類型
+     * 參考DecodeThread構造函數中如下代碼：hints.put(DecodeHintType.POSSIBLE_FORMATS,
      * decodeFormats);
      */
     private Collection<BarcodeFormat> decodeFormats;
 
     /**
-     * 【辅助解码的参数(用作MultiFormatReader的参数)】 该参数最终会传入MultiFormatReader，
-     * 上面的decodeFormats和characterSet最终会先加入到decodeHints中 最终被设置到MultiFormatReader中
-     * 参考DecodeHandler构造器中如下代码：multiFormatReader.setHints(hints);
+     * 【輔助解碼的參數(用作MultiFormatReader的參數)】 該參數最終會傳入MultiFormatReader，
+     * 上面的decodeFormats和characterSet最終會先加入到decodeHints中 最終被設置到MultiFormatReader中
+     * 參考DecodeHandler構造器中如下代碼：multiFormatReader.setHints(hints);
      */
     private Map<DecodeHintType, ?> decodeHints;
 
     /**
-     * 【辅助解码的参数(用作MultiFormatReader的参数)】 字符集，告诉扫描器该以何种字符集进行解码
-     * 对应于DecodeHintType.CHARACTER_SET类型
-     * 参考DecodeThread构造器如下代码：hints.put(DecodeHintType.CHARACTER_SET,
+     * 【輔助解碼的參數(用作MultiFormatReader的參數)】 字元集，告訴掃描器該以何種字元集進行解碼
+     * 對應於DecodeHintType.CHARACTER_SET類型
+     * 參考DecodeThread構造器如下代碼：hints.put(DecodeHintType.CHARACTER_SET,
      * characterSet);
      */
     private String characterSet;
@@ -117,7 +118,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     private IntentSource source;
 
     /**
-     * 图片的路径
+     * 圖片的路徑
      */
     private String photoPath;
 
@@ -135,14 +136,14 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         public void handleMessage(Message msg) {
 
             switch (msg.what) {
-                case PARSE_BARCODE_SUC: // 解析图片成功
+                case PARSE_BARCODE_SUC: // 解析圖片成功
                     Toast.makeText(activityReference.get(),
-                            "解析成功，结果为：" + msg.obj, Toast.LENGTH_SHORT).show();
+                            "解析成功，結果為：" + msg.obj, Toast.LENGTH_SHORT).show();
                     break;
 
-                case PARSE_BARCODE_FAIL:// 解析图片失败
+                case PARSE_BARCODE_FAIL:// 解析圖片失敗
 
-                    Toast.makeText(activityReference.get(), "解析图片失败",
+                    Toast.makeText(activityReference.get(), "解析圖片失敗",
                             Toast.LENGTH_SHORT).show();
                     break;
 
@@ -168,7 +169,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         beepManager = new BeepManager(this);
         ambientLightManager = new AmbientLightManager(this);
 
-        // 监听图片识别按钮
+        // 監聽圖片識別按鈕
         findViewById(R.id.capture_scan_photo).setOnClickListener(this);
 
         findViewById(R.id.capture_flashlight).setOnClickListener(this);
@@ -187,9 +188,9 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         // wrong size and partially
         // off screen.
 
-        // 相机初始化的动作需要开启相机并测量屏幕大小，这些操作
-        // 不建议放到onCreate中，因为如果在onCreate中加上首次启动展示帮助信息的代码的 话，
-        // 会导致扫描窗口的尺寸计算有误的bug
+        // 相機初始化的動作需要開啟相機並測量螢幕大小，這些操作
+        // 不建議放到onCreate中，因為如果在onCreate中加上首次啟動展示幫助資訊的代碼的 話，
+        // 會導致掃描視窗的尺寸計算有誤的bug
         cameraManager = new CameraManager(getApplication());
 
         viewfinderView = (ViewfinderView) findViewById(R.id.capture_viewfinder_view);
@@ -198,33 +199,35 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         handler = null;
         lastResult = null;
 
-        // 摄像头预览功能必须借助SurfaceView，因此也需要在一开始对其进行初始化
-        // 如果需要了解SurfaceView的原理
-        // 参考:http://blog.csdn.net/luoshengyang/article/details/8661317
-        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.capture_preview_view); // 预览
-        SurfaceHolder surfaceHolder = surfaceView.getHolder();
-        if (hasSurface) {
-            // The activity was paused but not stopped, so the surface still
-            // exists. Therefore
-            // surfaceCreated() won't be called, so init the camera here.
-            initCamera(surfaceHolder);
+//    // 攝像頭預覽功能必須借助SurfaceView，因此也需要在一開始對其進行初始化
+//    // 如果需要瞭解SurfaceView的原理
+//    // 參考:http://blog.csdn.net/luoshengyang/article/details/8661317
+//    SurfaceView surfaceView = (SurfaceView) findViewById(R.id.capture_preview_view); // 預覽
+//    SurfaceHolder surfaceHolder = surfaceView.getHolder();
+//    if (hasSurface) {
+//       // The activity was paused but not stopped, so the surface still
+//       // exists. Therefore
+//       // surfaceCreated() won't be called, so init the camera here.
+//       initCamera(surfaceHolder);
+//
+//    } else {
+//       // 防止sdk8的設備初始化預覽異常
+//       surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+//
+//       // Install the callback and wait for surfaceCreated() to init the
+//       // camera.
+////         surfaceHolder.addCallback(this);
+//    }
 
-        } else {
-            // 防止sdk8的设备初始化预览异常
-            surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-
-            // Install the callback and wait for surfaceCreated() to init the
-            // camera.
-            surfaceHolder.addCallback(this);
-        }
-
-        // 加载声音配置，其实在BeemManager的构造器中也会调用该方法，即在onCreate的时候会调用一次
+        TextureView surfaceView = (TextureView) findViewById(R.id.capture_preview_view); // 預覽
+        surfaceView.setSurfaceTextureListener(this);
+        // 載入聲音配置，其實在BeemManager的構造器中也會調用該方法，即在onCreate的時候會調用一次
         beepManager.updatePrefs();
 
-        // 启动闪光灯调节器
+        // 啟動閃光燈調節器
         ambientLightManager.start(cameraManager);
 
-        // 恢复活动监控器
+        // 恢復活動監控器
         inactivityTimer.onResume();
 
         source = IntentSource.NONE;
@@ -239,16 +242,16 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             handler = null;
         }
         inactivityTimer.onPause();
-        ambientLightManager.stop();
-        beepManager.close();
-
-        // 关闭摄像头
-        cameraManager.closeDriver();
-        if (!hasSurface) {
-            SurfaceView surfaceView = (SurfaceView) findViewById(R.id.capture_preview_view);
-            SurfaceHolder surfaceHolder = surfaceView.getHolder();
-            surfaceHolder.removeCallback(this);
-        }
+//    ambientLightManager.stop();
+//    beepManager.close();
+//
+//    // 關閉攝像頭
+//    cameraManager.closeDriver();
+//    if (!hasSurface) {
+//       SurfaceView surfaceView = (SurfaceView) findViewById(R.id.capture_preview_view);
+//       SurfaceHolder surfaceHolder = surfaceView.getHolder();
+////         surfaceHolder.removeCallback(this);
+//    }
         super.onPause();
     }
 
@@ -262,7 +265,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK:
-                if ((source == IntentSource.NONE) && lastResult != null) { // 重新进行扫描
+                if ((source == IntentSource.NONE) && lastResult != null) { // 重新進行掃描
                     restartPreviewAfterDelay(0L);
                     return true;
                 }
@@ -292,7 +295,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             switch (requestCode) {
                 case REQUEST_CODE:
 
-                    // 获取选中图片的路径
+                    // 獲取選中圖片的路徑
                     Cursor cursor = getContentResolver().query(
                             intent.getData(), null, null, null, null);
                     if (cursor.moveToFirst()) {
@@ -302,7 +305,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
                     cursor.close();
 
                     progressDialog = new ProgressDialog(this);
-                    progressDialog.setMessage("正在扫描...");
+                    progressDialog.setMessage("正在掃描...");
                     progressDialog.setCancelable(false);
                     progressDialog.show();
 
@@ -343,26 +346,28 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        if (holder == null) {
-            Log.e(TAG,
-                    "*** WARNING *** surfaceCreated() gave us a null surface!");
-        }
+    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
         if (!hasSurface) {
             hasSurface = true;
-            initCamera(holder);
+            initCamera(surfaceTexture);
         }
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                               int height) {
-        /*hasSurface = false;*/
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+        ambientLightManager.stop();
+        beepManager.close();
+        cameraManager.closeDriver();
         hasSurface = false;
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
     }
 
     /**
@@ -373,20 +378,21 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
      * @param scaleFactor amount by which thumbnail was scaled
      * @param barcode     A greyscale bitmap of the camera data which was decoded.
      */
+    @Override
     public void handleDecode(Result rawResult, Bitmap barcode, float scaleFactor) {
 
-        // 重新计时
+        // 重新計時
         inactivityTimer.onActivity();
 
         lastResult = rawResult;
 
-        // 把图片画到扫描框
+        // 把圖片畫到掃描框
         viewfinderView.drawResultBitmap(barcode);
 
         beepManager.playBeepSoundAndVibrate();
 
         Toast.makeText(this,
-                "识别结果:" + ResultParser.parseResult(rawResult).toString(),
+                "識別結果:" + ResultParser.parseResult(rawResult).toString(),
                 Toast.LENGTH_SHORT).show();
 
     }
@@ -398,14 +404,22 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         resetStatusView();
     }
 
+    @Override
     public ViewfinderView getViewfinderView() {
         return viewfinderView;
     }
 
+    @Override
     public Handler getHandler() {
         return handler;
     }
 
+    @Override
+    public Context getContext() {
+        return this;
+    }
+
+    @Override
     public CameraManager getCameraManager() {
         return cameraManager;
     }
@@ -415,13 +429,14 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         lastResult = null;
     }
 
+    @Override
     public void drawViewfinder() {
         viewfinderView.drawViewfinder();
     }
 
-    private void initCamera(SurfaceHolder surfaceHolder) {
-        if (surfaceHolder == null) {
-            throw new IllegalStateException("No SurfaceHolder provided");
+    private void initCamera(SurfaceTexture surfaceTexture) {
+        if (surfaceTexture == null) {
+            throw new IllegalStateException("No SurfaceTexture provided");
         }
 
         if (cameraManager.isOpen()) {
@@ -430,12 +445,11 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             return;
         }
         try {
-            cameraManager.openDriver(surfaceHolder);
+            cameraManager.openDriver(surfaceTexture);
             // Creating the handler starts the preview, which can also throw a
             // RuntimeException.
             if (handler == null) {
-                handler = new CaptureActivityHandler(this, decodeFormats,
-                        decodeHints, characterSet, cameraManager);
+                handler = new CaptureActivityHandler(this, decodeFormats, decodeHints, characterSet, cameraManager);
             }
             decodeOrStoreSavedBitmap(null, null);
         } catch (IOException ioe) {
@@ -450,7 +464,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     }
 
     /**
-     * 向CaptureActivityHandler中发送消息，并展示扫描到的图像
+     * 向CaptureActivityHandler中發送消息，並展示掃描到的圖像
      */
     private void decodeOrStoreSavedBitmap(Bitmap bitmap, Result result) {
         // Bitmap isn't used yet -- will be used soon
@@ -481,28 +495,29 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.capture_scan_photo: // 图片识别
-                // 打开手机中的相册
+            case R.id.capture_scan_photo: // 圖片識別
+                // 打開手機中的相冊
                 Intent innerIntent = new Intent(Intent.ACTION_GET_CONTENT); // "android.intent.action.GET_CONTENT"
                 innerIntent.setType("image/*");
                 Intent wrapperIntent = Intent.createChooser(innerIntent,
-                        "选择二维码图片");
+                        "選擇二維碼圖片");
                 this.startActivityForResult(wrapperIntent, REQUEST_CODE);
                 break;
 
             case R.id.capture_flashlight:
                 if (isFlashlightOpen) {
-                    cameraManager.setTorch(false); // 关闭闪光灯
+                    cameraManager.setTorch(false); // 關閉閃光燈
                     isFlashlightOpen = false;
                 } else {
-                    cameraManager.setTorch(true); // 打开闪光灯
+                    cameraManager.setTorch(true); // 打開閃光燈
                     isFlashlightOpen = true;
                 }
                 break;
             default:
-                break;
-        }
+				break;
+		}
 
-    }
+	}
 
 }
+

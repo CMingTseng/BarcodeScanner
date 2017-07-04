@@ -5,9 +5,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 
 /**
- * 兼容低版本的子线程开启任务
+ * 相容低版本的子線程開啟任務
  *
  * @author hugo
+ *
  */
 public class Runnable {
 
@@ -23,3 +24,4 @@ public class Runnable {
     }
 
 }
+

@@ -28,15 +28,15 @@ import cn.hugo.android.scanner.camera.CameraManager;
  *
  * <br/>
  * <br/>
- * 该视图是覆盖在相机的预览视图之上的一层视图。扫描区构成原理，其实是在预览视图上画四块遮罩层，
- * 中间留下的部分保持透明，并画上一条激光线，实际上该线条就是展示而已，与扫描功能没有任何关系。
+ * 該視圖是覆蓋在相機的預覽視圖之上的一層視圖。掃描區構成原理，其實是在預覽視圖上畫四塊遮罩層，
+ * 中間留下的部分保持透明，並畫上一條鐳射線，實際上該線條就是展示而已，與掃描功能沒有任何關係。
  *
  * @author dswitkin@google.com (Daniel Switkin)
  */
 public final class ViewfinderView extends View {
 
     /**
-     * 刷新界面的时间
+     * 刷新介面的時間
      */
     private static final long ANIMATION_DELAY = 10L;
     private static final int OPAQUE = 0xFF;
@@ -44,32 +44,32 @@ public final class ViewfinderView extends View {
     private int CORNER_PADDING;
 
     /**
-     * 扫描框中的中间线的宽度
+     * 掃描框中的中間線的寬度
      */
     private static int MIDDLE_LINE_WIDTH;
 
     /**
-     * 扫描框中的中间线的与扫描框左右的间隙
+     * 掃描框中的中間線的與掃描框左右的間隙
      */
     private static int MIDDLE_LINE_PADDING;
 
     /**
-     * 中间那条线每次刷新移动的距离
+     * 中間那條線每次刷新移動的距離
      */
     private static final int SPEEN_DISTANCE = 10;
 
     /**
-     * 画笔对象的引用
+     * 畫筆對象的引用
      */
     private Paint paint;
 
     /**
-     * 中间滑动线的最顶端位置
+     * 中間滑動線的最頂端位置
      */
     private int slideTop;
 
     /**
-     * 中间滑动线的最底端位置
+     * 中間滑動線的最底端位置
      */
     private int slideBottom;
 
@@ -78,7 +78,7 @@ public final class ViewfinderView extends View {
     private Bitmap resultBitmap;
 
     /**
-     * 遮掩层的颜色
+     * 遮掩層的顏色
      */
     private final int maskColor;
     private final int resultColor;
@@ -89,7 +89,7 @@ public final class ViewfinderView extends View {
     private List<ResultPoint> lastPossibleResultPoints;
 
     /**
-     * 第一次绘制控件
+     * 第一次繪製控制項
      */
     boolean isFirst = true;
 
@@ -103,10 +103,10 @@ public final class ViewfinderView extends View {
         MIDDLE_LINE_PADDING = dip2px(context, 20.0F);
         MIDDLE_LINE_WIDTH = dip2px(context, 3.0F);
 
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG); // 开启反锯齿
+        paint = new Paint(Paint.ANTI_ALIAS_FLAG); // 開啟反鋸齒
 
         Resources resources = getResources();
-        maskColor = resources.getColor(R.color.viewfinder_mask); // 遮掩层颜色
+        maskColor = resources.getColor(R.color.viewfinder_mask); // 遮掩層顏色
         resultColor = resources.getColor(R.color.result_view);
 
         resultPointColor = resources.getColor(R.color.possible_result_points);
@@ -129,19 +129,19 @@ public final class ViewfinderView extends View {
             return;
         }
 
-        // 绘制遮掩层
+        // 繪製遮掩層
         drawCover(canvas, frame);
 
-        if (resultBitmap != null) { // 绘制扫描结果的图
+        if (resultBitmap != null) { // 繪製掃描結果的圖
             // Draw the opaque result bitmap over the scanning rectangle
             paint.setAlpha(0xA0);
             canvas.drawBitmap(resultBitmap, null, frame, paint);
         } else {
 
-            // 画扫描框边上的角
+            // 畫掃描框邊上的角
             drawRectEdges(canvas, frame);
 
-            // 绘制扫描线
+            // 繪製掃描線
             drawScanningLine(canvas, frame);
 
             List<ResultPoint> currentPossible = possibleResultPoints;
@@ -167,7 +167,7 @@ public final class ViewfinderView extends View {
                 }
             }
 
-            // 只刷新扫描框的内容，其他地方不刷新
+            // 只刷新掃描框的內容，其他地方不刷新
             postInvalidateDelayed(ANIMATION_DELAY, frame.left, frame.top,
                     frame.right, frame.bottom);
 
@@ -175,26 +175,26 @@ public final class ViewfinderView extends View {
     }
 
     /**
-     * 绘制扫描线
+     * 繪製掃描線
      *
-     * @param frame 扫描框
+     * @param frame 掃描框
      */
     private void drawScanningLine(Canvas canvas, Rect frame) {
 
-        // 初始化中间线滑动的最上边和最下边
+        // 初始化中間線滑動的最上邊和最下邊
         if (isFirst) {
             isFirst = false;
             slideTop = frame.top;
             slideBottom = frame.bottom;
         }
 
-        // 绘制中间的线,每次刷新界面，中间的线往下移动SPEEN_DISTANCE
+        // 繪製中間的線,每次刷新介面，中間的線往下移動SPEEN_DISTANCE
         slideTop += SPEEN_DISTANCE;
         if (slideTop >= slideBottom) {
             slideTop = frame.top;
         }
 
-        // 从图片资源画扫描线
+        // 從圖片資源畫掃描線
         Rect lineRect = new Rect();
         lineRect.left = frame.left + MIDDLE_LINE_PADDING;
         lineRect.right = frame.right - MIDDLE_LINE_PADDING;
@@ -207,19 +207,19 @@ public final class ViewfinderView extends View {
     }
 
     /**
-     * 绘制遮掩层
+     * 繪製遮掩層
      */
     private void drawCover(Canvas canvas, Rect frame) {
 
-        // 获取屏幕的宽和高
+		// 獲取螢幕的寬和高
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
         // Draw the exterior (i.e. outside the framing rect) darkened
         paint.setColor(resultBitmap != null ? resultColor : maskColor);
 
-        // 画出扫描框外面的阴影部分，共四个部分，扫描框的上面到屏幕上面，扫描框的下面到屏幕下面
-        // 扫描框的左边面到屏幕左边，扫描框的右边到屏幕右边
+        // 畫出掃描框外面的陰影部分，共四個部分，掃描框的上面到螢幕上面，掃描框的下面到螢幕下面
+        // 掃描框的左邊面到螢幕左邊，掃描框的右邊到螢幕右邊
         canvas.drawRect(0, 0, width, frame.top, paint);
         canvas.drawRect(0, frame.top, frame.left, frame.bottom + 1, paint);
         canvas.drawRect(frame.right + 1, frame.top, width, frame.bottom + 1,
@@ -228,7 +228,10 @@ public final class ViewfinderView extends View {
     }
 
     /**
-     * 描绘方形的四个角
+     * 描繪方形的四個角
+     *
+     * @param canvas
+     * @param frame
      */
     private void drawRectEdges(Canvas canvas, Rect frame) {
 
@@ -237,7 +240,7 @@ public final class ViewfinderView extends View {
 
         Resources resources = getResources();
         /**
-         * 这些资源可以用缓存进行管理，不需要每次刷新都新建
+         * 這些資源可以用緩存進行管理，不需要每次刷新都新建
          */
         Bitmap bitmapCornerTopleft = BitmapFactory.decodeResource(resources,
                 R.drawable.scan_corner_top_left);
@@ -284,7 +287,8 @@ public final class ViewfinderView extends View {
      * Draw a bitmap with the result points highlighted instead of the live
      * scanning display.
      *
-     * @param barcode An image of the decoded barcode.
+     * @param barcode
+     *            An image of the decoded barcode.
      */
     public void drawResultBitmap(Bitmap barcode) {
         resultBitmap = barcode;
@@ -304,7 +308,11 @@ public final class ViewfinderView extends View {
     }
 
     /**
-     * dp转px
+     * dp轉px
+     *
+     * @param context
+     * @param dipValue
+     * @return
      */
     public int dip2px(Context context, float dipValue) {
         final float scale = context.getResources().getDisplayMetrics().density;
@@ -312,3 +320,4 @@ public final class ViewfinderView extends View {
     }
 
 }
+

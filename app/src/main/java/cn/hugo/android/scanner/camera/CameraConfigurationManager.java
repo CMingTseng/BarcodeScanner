@@ -41,7 +41,7 @@ import cn.hugo.android.scanner.config.Config;
  *
  * <br/>
  *
- * 摄像头参数的设置类
+ * 攝像頭參數的設置類
  */
 final class CameraConfigurationManager {
 
@@ -59,12 +59,12 @@ final class CameraConfigurationManager {
 
     private final Context context;
     /**
-     * 屏幕分辨率
+     * 螢幕解析度
      */
     private Point screenResolution;
 
     /**
-     * 相机分辨率
+     * 相機解析度
      */
     private Point cameraResolution;
 
@@ -82,16 +82,16 @@ final class CameraConfigurationManager {
         Display display = manager.getDefaultDisplay();
         Point theScreenResolution = new Point();
 
-        // sdk8出错
+        // sdk8出錯
         // display.getSize(theScreenResolution);
 
-        // 改为此方式
+        // 改為此方式
         theScreenResolution = getDisplaySize(display);
 
         screenResolution = theScreenResolution;
         Log.i(TAG, "Screen resolution: " + screenResolution);
 
-        //解决竖屏拉伸
+        //解決豎屏拉伸
         Point screenResolutionForCamera = new Point();
         screenResolutionForCamera.x = screenResolution.x;
         screenResolutionForCamera.y = screenResolution.y;
@@ -138,10 +138,10 @@ final class CameraConfigurationManager {
         SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
 
-        // 初始化闪光灯
+        // 初始化閃光燈
         initializeTorch(parameters, prefs, safeMode);
 
-        // 默认使用自动对焦
+        // 默認使用自動對焦
         String focusMode = findSettableValue(
                 parameters.getSupportedFocusModes(),
                 Camera.Parameters.FOCUS_MODE_AUTO);
@@ -233,7 +233,7 @@ final class CameraConfigurationManager {
     }
 
     /**
-     * 从相机支持的分辨率中计算出最适合的预览界面尺寸
+     * 從相機支援的解析度中計算出最適合的預覽介面尺寸
      */
     private Point findBestPreviewSizeValue(Camera.Parameters parameters,
                                            Point screenResolution) {
@@ -246,7 +246,7 @@ final class CameraConfigurationManager {
             return new Point(defaultSize.width, defaultSize.height);
         }
 
-        // Sort by size, descending
+		// Sort by size, descending
         List<Camera.Size> supportedPreviewSizes = new ArrayList<Camera.Size>(
                 rawSupportedSizes);
         Collections.sort(supportedPreviewSizes, new Comparator<Camera.Size>() {
@@ -334,7 +334,11 @@ final class CameraConfigurationManager {
     }
 
     /**
-     * 在supportedValues中寻找desiredValues，找不到则返回null
+     * 在supportedValues中尋找desiredValues，找不到則返回null
+     *
+     * @param supportedValues
+     * @param desiredValues
+     * @return
      */
     private static String findSettableValue(Collection<String> supportedValues,
                                             String... desiredValues) {
@@ -353,3 +357,4 @@ final class CameraConfigurationManager {
     }
 
 }
+

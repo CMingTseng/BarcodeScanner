@@ -18,7 +18,7 @@ package cn.hugo.android.scanner.config;
 
 /**
  * The main settings activity.
- *
+ * 
  * @author dswitkin@google.com (Daniel Switkin)
  * @author Sean Owen
  */

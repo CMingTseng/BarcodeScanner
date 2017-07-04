@@ -21,6 +21,7 @@ import com.google.zxing.PlanarYUVLuminanceSource;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Handler;
 import android.util.Log;
@@ -34,7 +35,7 @@ import java.io.IOException;
  * preview-sized images, which are used for both preview and decoding. <br/>
  * <br/>
  *
- * 该类封装了相机的所有服务并且是该app中唯一与相机打交道的类
+ * 該類封裝了相機的所有服務並且是該app中唯一與相機打交道的類
  *
  * @author dswitkin@google.com (Daniel Switkin)
  */
@@ -89,7 +90,7 @@ public final class CameraManager {
             throws IOException {
         Camera theCamera = camera;
         if (theCamera == null) {
-            // 获取手机背面的摄像头
+            // 獲取手機背面的攝像頭
             theCamera = OpenCameraInterface.open();
             if (theCamera == null) {
                 throw new IOException();
@@ -97,9 +98,63 @@ public final class CameraManager {
             camera = theCamera;
         }
 
-        // 设置摄像头预览view
+		// 設置攝像頭預覽view
         theCamera.setPreviewDisplay(holder);
 
+        if (!initialized) {
+            initialized = true;
+            configManager.initFromCameraParameters(theCamera);
+            if (requestedFramingRectWidth > 0 && requestedFramingRectHeight > 0) {
+                setManualFramingRect(requestedFramingRectWidth,
+                        requestedFramingRectHeight);
+                requestedFramingRectWidth = 0;
+                requestedFramingRectHeight = 0;
+            }
+        }
+
+        Camera.Parameters parameters = theCamera.getParameters();
+        String parametersFlattened = parameters == null ? null : parameters
+                .flatten(); // Save
+        // these,
+        // temporarily
+        try {
+            configManager.setDesiredCameraParameters(theCamera, false);
+        } catch (RuntimeException re) {
+            // Driver failed
+            Log.w(TAG,
+                    "Camera rejected parameters. Setting only minimal safe-mode parameters");
+            Log.i(TAG, "Resetting to saved camera params: "
+                    + parametersFlattened);
+            // Reset:
+            if (parametersFlattened != null) {
+                parameters = theCamera.getParameters();
+                parameters.unflatten(parametersFlattened);
+                try {
+                    theCamera.setParameters(parameters);
+                    configManager.setDesiredCameraParameters(theCamera, true);
+                } catch (RuntimeException re2) {
+                    // Well, darn. Give up
+                    Log.w(TAG,
+                            "Camera rejected even safe-mode parameters! No configuration");
+                }
+            }
+        }
+
+    }
+
+    public synchronized void openDriver(SurfaceTexture surfaceTexture) throws IOException {
+        Camera theCamera = camera;
+        if (theCamera == null) {
+            // 獲取手機背面的攝像頭
+            theCamera = OpenCameraInterface.open();
+            if (theCamera == null) {
+                throw new IOException();
+            }
+            camera = theCamera;
+        }
+
+        // 設置攝像頭預覽view
+        theCamera.setPreviewTexture(surfaceTexture);
         if (!initialized) {
             initialized = true;
             configManager.initFromCameraParameters(theCamera);
@@ -215,20 +270,22 @@ public final class CameraManager {
      * will arrive as byte[] in the message.obj field, with width and height
      * encoded as message.arg1 and message.arg2, respectively. <br/>
      *
-     * 两个绑定操作：<br/>
-     * 1：将handler与回调函数绑定；<br/>
-     * 2：将相机与回调函数绑定<br/>
-     * 综上，该函数的作用是当相机的预览界面准备就绪后就会调用hander向其发送传入的message
+     * 兩個綁定操作：<br/>
+     * 1：將handler與回調函數綁定；<br/>
+     * 2：將相機與回調函數綁定<br/>
+     * 綜上，該函數的作用是當相機的預覽介面準備就緒後就會調用hander向其發送傳入的message
      *
-     * @param handler The handler to send the message to.
-     * @param message The what field of the message to be sent.
+     * @param handler
+     *            The handler to send the message to.
+     * @param message
+     *            The what field of the message to be sent.
      */
     public synchronized void requestPreviewFrame(Handler handler, int message) {
         Camera theCamera = camera;
         if (theCamera != null && previewing) {
             previewCallback.setHandler(handler, message);
 
-            // 绑定相机回调函数，当预览界面准备就绪后会回调Camera.PreviewCallback.onPreviewFrame
+            // 綁定相機回調函數，當預覽介面準備就緒後會回調Camera.PreviewCallback.onPreviewFrame
             theCamera.setOneShotPreviewCallback(previewCallback);
         }
     }
@@ -254,7 +311,7 @@ public final class CameraManager {
 
             int width = findDesiredDimensionInRange(screenResolution.x,
                     MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
-            // 将扫描框设置成一个正方形
+            // 將掃描框設置成一個正方形
             int height = width;
 
             int leftOffset = (screenResolution.x - width) / 2;
@@ -270,7 +327,12 @@ public final class CameraManager {
 
     /**
      * Target 5/8 of each dimension<br/>
-     * 计算结果在hardMin~hardMax之间
+     * 計算結果在hardMin~hardMax之間
+     *
+     * @param resolution
+     * @param hardMin
+     * @param hardMax
+     * @return
      */
     private static int findDesiredDimensionInRange(int resolution, int hardMin,
                                                    int hardMax) {
@@ -320,8 +382,10 @@ public final class CameraManager {
      * Allows third party apps to specify the scanning rectangle dimensions,
      * rather than determine them automatically based on screen resolution.
      *
-     * @param width  The width in pixels to scan.
-     * @param height The height in pixels to scan.
+     * @param width
+     *            The width in pixels to scan.
+     * @param height
+     *            The height in pixels to scan.
      */
     public synchronized void setManualFramingRect(int width, int height) {
         if (initialized) {
@@ -348,9 +412,12 @@ public final class CameraManager {
      * A factory method to build the appropriate LuminanceSource object based on
      * the format of the preview buffers, as described by Camera.Parameters.
      *
-     * @param data   A preview frame.
-     * @param width  The width of the image.
-     * @param height The height of the image.
+     * @param data
+     *            A preview frame.
+     * @param width
+     *            The width of the image.
+     * @param height
+     *            The height of the image.
      * @return A PlanarYUVLuminanceSource instance.
      */
     public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data,
@@ -365,7 +432,7 @@ public final class CameraManager {
     }
 
     /**
-     * 焦点放小
+     * 焦點放小
      */
     public void zoomOut() {
         if (camera != null && camera.getParameters().isZoomSupported()) {
@@ -382,7 +449,7 @@ public final class CameraManager {
     }
 
     /**
-     * 焦点放大
+     * 焦點放大
      */
     public void zoomIn() {
         if (camera != null && camera.getParameters().isZoomSupported()) {
@@ -399,7 +466,7 @@ public final class CameraManager {
     }
 
     /*
-     * 缩放
+     * 縮放
      *
      * @param scale
      */
@@ -415,3 +482,4 @@ public final class CameraManager {
         }
     }
 }
+

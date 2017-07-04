@@ -33,10 +33,8 @@ import cn.hugo.android.scanner.config.Config;
  * 由於對焦不是一次性完成的任務（手抖），而系統提供的對焦僅有Camera.autoFocus()方法，
  * 因此需要一個線程來不斷調用Camera.autoFocus()直到用戶滿意按下快門為止
  */
-final class AutoFocusManager implements Camera.AutoFocusCallback {
-
+public class AutoFocusManager implements Camera.AutoFocusCallback {
     private static final String TAG = AutoFocusManager.class.getSimpleName();
-
     private static final long AUTO_FOCUS_INTERVAL_MS = 2000L;
     private static final Collection<String> FOCUS_MODES_CALLING_AF;
 
@@ -47,35 +45,32 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
     }
 
     private boolean active;
-    private final boolean useAutoFocus;
-    private final Camera camera;
-    private AsyncTask<?, ?, ?> outstandingTask;
+    private final boolean mUseAutoFocus;
+    private final Camera mCamera;
+    private AsyncTask<?, ?, ?> mOutstandingTask;
 
-    AutoFocusManager(Context context, Camera camera) {
-        this.camera = camera;
-        SharedPreferences sharedPrefs = PreferenceManager
-                .getDefaultSharedPreferences(context);
+    public AutoFocusManager(Context context, Camera camera) {
+        this.mCamera = camera;
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         String currentFocusMode = camera.getParameters().getFocusMode();
-        useAutoFocus = sharedPrefs.getBoolean(Config.KEY_AUTO_FOCUS, true)
-                && FOCUS_MODES_CALLING_AF.contains(currentFocusMode);
-        Log.i(TAG, "Current focus mode '" + currentFocusMode
-                + "'; use auto focus? " + useAutoFocus);
+        mUseAutoFocus = sharedPrefs.getBoolean(Config.KEY_AUTO_FOCUS, true) && FOCUS_MODES_CALLING_AF.contains(currentFocusMode);
+        Log.i(TAG, "Current focus mode '" + currentFocusMode + "'; use auto focus? " + mUseAutoFocus);
         start();
     }
 
     @Override
     public synchronized void onAutoFocus(boolean success, Camera theCamera) {
         if (active) {
-            outstandingTask = new AutoFocusTask();
-            Runnable.execAsync(outstandingTask);
+            mOutstandingTask = new AutoFocusTask();
+            Runnable.execAsync(mOutstandingTask);
         }
     }
 
-    synchronized void start() {
-        if (useAutoFocus) {
+    public synchronized void start() {
+        if (mUseAutoFocus) {
             active = true;
             try {
-                camera.autoFocus(this);
+                mCamera.autoFocus(this);
             } catch (RuntimeException re) {
                 // Have heard RuntimeException reported in Android 4.0.x+;
                 // continue?
@@ -84,19 +79,19 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
         }
     }
 
-    synchronized void stop() {
-        if (useAutoFocus) {
+    public synchronized void stop() {
+        if (mUseAutoFocus) {
             try {
-                camera.cancelAutoFocus();
+                mCamera.cancelAutoFocus();
             } catch (RuntimeException re) {
                 // Have heard RuntimeException reported in Android 4.0.x+;
                 // continue?
                 Log.w(TAG, "Unexpected exception while cancelling focusing", re);
             }
         }
-        if (outstandingTask != null) {
-            outstandingTask.cancel(true);
-            outstandingTask = null;
+        if (mOutstandingTask != null) {
+            mOutstandingTask.cancel(true);
+            mOutstandingTask = null;
         }
         active = false;
     }
@@ -117,6 +112,5 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
             return null;
         }
     }
-
 }
 

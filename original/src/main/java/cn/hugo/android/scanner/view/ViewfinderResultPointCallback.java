@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 ZXing authors
+ * Copyright (C) 2009 ZXing authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
-package cn.hugo.android.scanner;
+package cn.hugo.android.scanner.view;
 
-enum IntentSource {
+import com.google.zxing.ResultPoint;
+import com.google.zxing.ResultPointCallback;
 
-    NATIVE_APP_INTENT,
-    PRODUCT_SEARCH_LINK,
-    ZXING_LINK,
-    NONE
+public final class ViewfinderResultPointCallback implements ResultPointCallback {
+
+    private final ViewfinderView viewfinderView;
+
+    public ViewfinderResultPointCallback(ViewfinderView viewfinderView) {
+        this.viewfinderView = viewfinderView;
+    }
+
+    @Override
+    public void foundPossibleResultPoint(ResultPoint point) {
+        viewfinderView.addPossibleResultPoint(point);
+    }
 
 }

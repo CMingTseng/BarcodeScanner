@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.hugo.android.scanner;
+package cn.hugo.android.scanner.utils;
 
 import android.app.Activity;
 import android.content.Context;
@@ -28,30 +28,29 @@ import android.util.Log;
 
 import java.io.IOException;
 
+import cn.hugo.android.scanner.R;
 import cn.hugo.android.scanner.config.Config;
 
 /**
- * Manages beeps and vibrations for {@link CaptureActivity}.
+ * Manages beeps and vibrations for {@link  }.
  */
-final class BeepManager implements MediaPlayer.OnCompletionListener,
-        MediaPlayer.OnErrorListener {
-
+public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
     private static final String TAG = BeepManager.class.getSimpleName();
-
     private static final float BEEP_VOLUME = 0.10f;
-
     private static final long VIBRATE_DURATION = 200L;
-
-    private final Activity activity;
-
+    private final Activity mActivity;
     private MediaPlayer mediaPlayer;
-
     private boolean playBeep;
-
     private boolean vibrate;
 
-    BeepManager(Activity activity) {
-        this.activity = activity;
+    public BeepManager(Activity activity) {
+        this.mActivity = activity;
+        this.mediaPlayer = null;
+        updatePrefs();
+    }
+
+    public BeepManager(Context context) {
+        this.mActivity = (Activity) context;
         this.mediaPlayer = null;
         updatePrefs();
     }
@@ -59,29 +58,29 @@ final class BeepManager implements MediaPlayer.OnCompletionListener,
     /**
      * 掃描成功後可以播放提示音並震動，這兩種功能都是用戶自定義的 在Barcode Scanner中點擊功能表鍵，點設置即可看到這兩項的設置
      */
-    synchronized void updatePrefs() {
+    public synchronized void updatePrefs() {
         SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(activity);
-        playBeep = shouldBeep(prefs, activity);
+                .getDefaultSharedPreferences(mActivity);
+        playBeep = shouldBeep(prefs, mActivity);
         vibrate = prefs.getBoolean(Config.KEY_VIBRATE, false);
         if (playBeep && mediaPlayer == null) {
             // The volume on STREAM_SYSTEM is not adjustable, and users found it
             // too loud,
             // so we now play on the music stream.
-            activity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-            mediaPlayer = buildMediaPlayer(activity);
+            mActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+            mediaPlayer = buildMediaPlayer(mActivity);
         }
     }
 
     /**
      * 根據配置播放提示音和震動
      */
-    synchronized void playBeepSoundAndVibrate() {
+    public synchronized void playBeepSoundAndVibrate() {
         if (playBeep && mediaPlayer != null) {
             mediaPlayer.start();
         }
         if (vibrate) {
-            Vibrator vibrator = (Vibrator) activity
+            Vibrator vibrator = (Vibrator) mActivity
                     .getSystemService(Context.VIBRATOR_SERVICE);
             vibrator.vibrate(VIBRATE_DURATION);
         }
@@ -132,7 +131,7 @@ final class BeepManager implements MediaPlayer.OnCompletionListener,
         if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
             // we are finished, so put up an appropriate error toast if required
             // and finish
-            activity.finish();
+            mActivity.finish();
         } else {
             // possibly media player error, so release and recreate
             mp.release();
@@ -151,7 +150,7 @@ final class BeepManager implements MediaPlayer.OnCompletionListener,
             mediaPlayer.release();
             mediaPlayer = null;
         }
-	}
+    }
 
 }
 

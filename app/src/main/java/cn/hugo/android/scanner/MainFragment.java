@@ -8,7 +8,6 @@ import com.google.zxing.client.result.ResultParser;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
@@ -28,17 +27,22 @@ import java.util.Collection;
 import java.util.Map;
 
 import cn.hugo.android.scanner.camera.CameraManager;
+import cn.hugo.android.scanner.config.IntentSource;
 import cn.hugo.android.scanner.decode.CaptureActivityHandler;
+import cn.hugo.android.scanner.utils.AmbientLightManager;
+import cn.hugo.android.scanner.utils.BeepManager;
+import cn.hugo.android.scanner.utils.DecodeInterface;
+import cn.hugo.android.scanner.utils.FinishListener;
+import cn.hugo.android.scanner.utils.InactivityTimer;
 import cn.hugo.android.scanner.view.ViewfinderView;
 
 /**
  * Created by Neo on 2016/9/17 017.
  */
-public class MainFragment extends Fragment implements DecodeInterface, TextureView.SurfaceTextureListener, View.OnClickListener {
+public class MainFragment extends Fragment implements DecodeInterface, TextureView.SurfaceTextureListener {
     private static final String TAG = MainFragment.class.getSimpleName();
     private Context mContext;
     private static final int REQUEST_CODE = 100;
-
     private static final int PARSE_BARCODE_FAIL = 300;
     private static final int PARSE_BARCODE_SUC = 200;
 
@@ -67,7 +71,9 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
     /**
      * 掃描區域
      */
-    private ViewfinderView viewfinderView;
+    private ViewfinderView mViewfinderView;
+
+    private TextureView mSurfaceView;
 
     private CaptureActivityHandler handler;
 
@@ -138,7 +144,6 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
 
             super.handleMessage(msg);
         }
-
     }
 
     @Override
@@ -149,76 +154,30 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-//    Window window =getWindow();
-//    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
+        final Context context = container.getContext();
         View root = inflater.inflate(R.layout.capture, container, false);
         hasSurface = false;
-        inactivityTimer = new InactivityTimer(getActivity());
-        beepManager = new BeepManager(getActivity());
-        ambientLightManager = new AmbientLightManager(getActivity());
-
-        // 監聽圖片識別按鈕
-        root.findViewById(R.id.capture_scan_photo).setOnClickListener(this);
-
-        root.findViewById(R.id.capture_flashlight).setOnClickListener(this);
+        inactivityTimer = new InactivityTimer(context);
+        beepManager = new BeepManager(context);
+        ambientLightManager = new AmbientLightManager(context);
+        mViewfinderView = (ViewfinderView) root.findViewById(R.id.capture_viewfinder_view);
+        mSurfaceView = (TextureView) root.findViewById(R.id.capture_preview_view); // 預覽
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-
-        // CameraManager must be initialized here, not in onCreate(). This is
-        // necessary because we don't
-        // want to open the camera driver and measure the screen size if we're
-        // going to show the help on
-        // first launch. That led to bugs where the scanning rectangle was the
-        // wrong size and partially
-        // off screen.
-
-        // 相機初始化的動作需要開啟相機並測量螢幕大小，這些操作
-        // 不建議放到onCreate中，因為如果在onCreate中加上首次啟動展示幫助資訊的代碼的 話，
-        // 會導致掃描視窗的尺寸計算有誤的bug
-        cameraManager = new CameraManager(getActivity().getApplication());
-
-        viewfinderView = (ViewfinderView) getView().findViewById(R.id.capture_viewfinder_view);
-        viewfinderView.setCameraManager(cameraManager);
-
+        cameraManager = new CameraManager(mContext);
+        mViewfinderView.setCameraManager(cameraManager);
         handler = null;
-        lastResult = null;
-
-//    // 攝像頭預覽功能必須借助SurfaceView，因此也需要在一開始對其進行初始化
-//    // 如果需要瞭解SurfaceView的原理
-//    // 參考:http://blog.csdn.net/luoshengyang/article/details/8661317
-//    SurfaceView surfaceView = (SurfaceView) findViewById(R.id.capture_preview_view); // 預覽
-//    SurfaceHolder surfaceHolder = surfaceView.getHolder();
-//    if (hasSurface) {
-//       // The activity was paused but not stopped, so the surface still
-//       // exists. Therefore
-//       // surfaceCreated() won't be called, so init the camera here.
-//       initCamera(surfaceHolder);
-//
-//    } else {
-//       // 防止sdk8的設備初始化預覽異常
-//       surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-//
-//       // Install the callback and wait for surfaceCreated() to init the
-//       // camera.
-////         surfaceHolder.addCallback(this);
-//    }
-
-        TextureView surfaceView = (TextureView) getView().findViewById(R.id.capture_preview_view); // 預覽
-        surfaceView.setSurfaceTextureListener(this);
+        mSurfaceView.setSurfaceTextureListener(this);
         // 載入聲音配置，其實在BeemManager的構造器中也會調用該方法，即在onCreate的時候會調用一次
         beepManager.updatePrefs();
-
         // 啟動閃光燈調節器
         ambientLightManager.start(cameraManager);
-
         // 恢復活動監控器
         inactivityTimer.onResume();
-
         source = IntentSource.NONE;
         decodeFormats = null;
         characterSet = null;
@@ -237,8 +196,8 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
 //    // 關閉攝像頭
 //    cameraManager.closeDriver();
 //    if (!hasSurface) {
-//       SurfaceView surfaceView = (SurfaceView) findViewById(R.id.capture_preview_view);
-//       SurfaceHolder surfaceHolder = surfaceView.getHolder();
+//       SurfaceView mSurfaceView = (SurfaceView) findViewById(R.id.capture_preview_view);
+//       SurfaceHolder surfaceHolder = mSurfaceView.getHolder();
 ////         surfaceHolder.removeCallback(this);
 //    }
         super.onPause();
@@ -318,7 +277,7 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
         lastResult = rawResult;
 
         // 把圖片畫到掃描框
-        viewfinderView.drawResultBitmap(barcode);
+        mViewfinderView.drawResultBitmap(barcode);
 
         beepManager.playBeepSoundAndVibrate();
 
@@ -335,7 +294,7 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
 
     @Override
     public ViewfinderView getViewfinderView() {
-        return viewfinderView;
+        return mViewfinderView;
     }
 
     @Override
@@ -354,13 +313,13 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
     }
 
     private void resetStatusView() {
-        viewfinderView.setVisibility(View.VISIBLE);
+        mViewfinderView.setVisibility(View.VISIBLE);
         lastResult = null;
     }
 
     @Override
     public void drawViewfinder() {
-        viewfinderView.drawViewfinder();
+        mViewfinderView.drawViewfinder();
     }
 
     private void initCamera(SurfaceTexture surfaceTexture) {
@@ -394,6 +353,9 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
 
     /**
      * 向CaptureActivityHandler中發送消息，並展示掃描到的圖像
+     *
+     * @param bitmap
+     * @param result
      */
     private void decodeOrStoreSavedBitmap(Bitmap bitmap, Result result) {
         // Bitmap isn't used yet -- will be used soon
@@ -420,34 +382,5 @@ public class MainFragment extends Fragment implements DecodeInterface, TextureVi
         builder.setOnCancelListener(new FinishListener(getActivity()));
         builder.show();
     }
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.capture_scan_photo: // 圖片識別
-                // 打開手機中的相冊
-                Intent innerIntent = new Intent(Intent.ACTION_GET_CONTENT); // "android.intent.action.GET_CONTENT"
-                innerIntent.setType("image/*");
-                Intent wrapperIntent = Intent.createChooser(innerIntent,
-                        "選擇二維碼圖片");
-                this.startActivityForResult(wrapperIntent, REQUEST_CODE);
-                break;
-
-            case R.id.capture_flashlight:
-                if (isFlashlightOpen) {
-                    cameraManager.setTorch(false); // 關閉閃光燈
-                    isFlashlightOpen = false;
-                } else {
-                    cameraManager.setTorch(true); // 打開閃光燈
-                    isFlashlightOpen = true;
-                }
-                break;
-            default:
-                break;
-        }
-
-    }
-
-
 }
 

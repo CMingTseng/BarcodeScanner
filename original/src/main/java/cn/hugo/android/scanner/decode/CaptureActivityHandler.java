@@ -20,21 +20,26 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.DecodeHintType;
 import com.google.zxing.Result;
 
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Browser;
 import android.util.Log;
 
 import java.util.Collection;
 import java.util.Map;
 
+import cn.hugo.android.scanner.CaptureActivity;
 import cn.hugo.android.scanner.R;
 import cn.hugo.android.scanner.camera.CameraManager;
-import cn.hugo.android.scanner.utils.DecodeInterface;
 import cn.hugo.android.scanner.view.ViewfinderResultPointCallback;
 
 /**
@@ -47,11 +52,11 @@ public final class CaptureActivityHandler extends Handler {
 
     private static final String TAG = CaptureActivityHandler.class.getSimpleName();
 
-    private DecodeInterface activity;
-
+    //	private final CaptureActivity activity;
+    private final CaptureActivity activity;
 
     /**
-     * 真正負責掃描任務的核心線程
+     * 真正负责扫描任务的核心线程
      */
     private final DecodeThread decodeThread;
 
@@ -60,30 +65,30 @@ public final class CaptureActivityHandler extends Handler {
     private final CameraManager cameraManager;
 
     /**
-     * 當前掃描的狀態
+     * 当前扫描的状态
      */
     private enum State {
         /**
-         * 預覽
+         * 预览
          */
         PREVIEW,
         /**
-         * 掃描成功
+         * 扫描成功
          */
         SUCCESS,
         /**
-         * 結束掃描
+         * 结束扫描
          */
         DONE
     }
 
-    public CaptureActivityHandler(DecodeInterface activity,
+    public CaptureActivityHandler(CaptureActivity activity,
                                   Collection<BarcodeFormat> decodeFormats,
                                   Map<DecodeHintType, ?> baseHints, String characterSet,
                                   CameraManager cameraManager) {
         this.activity = activity;
 
-        // 啟動掃描線程
+        // 启动扫描线程
         decodeThread = new DecodeThread(activity, decodeFormats, baseHints,
                 characterSet, new ViewfinderResultPointCallback(
                 activity.getViewfinderView()));
@@ -94,7 +99,7 @@ public final class CaptureActivityHandler extends Handler {
         // Start ourselves capturing previews and decoding.
         this.cameraManager = cameraManager;
 
-        // 開啟相機預覽介面
+        // 开启相机预览界面
         cameraManager.startPreview();
 
         restartPreviewAndDecode();
@@ -103,7 +108,7 @@ public final class CaptureActivityHandler extends Handler {
     @Override
     public void handleMessage(Message message) {
         switch (message.what) {
-            case R.id.restart_preview: // 準備進行下一次掃描
+            case R.id.restart_preview: // 准备进行下一次扫描
                 Log.d(TAG, "Got restart preview message");
                 restartPreviewAndDecode();
                 break;
@@ -126,8 +131,6 @@ public final class CaptureActivityHandler extends Handler {
                     scaleFactor = bundle
                             .getFloat(DecodeThread.BARCODE_SCALED_FACTOR);
                 }
-
-                //FIXME
                 activity.handleDecode((Result) message.obj, barcode,
                         scaleFactor);
                 break;
@@ -138,10 +141,10 @@ public final class CaptureActivityHandler extends Handler {
                 cameraManager.requestPreviewFrame(decodeThread.getHandler(),
                         R.id.decode);
                 break;
-            case R.id.return_scan_result: //FIXME
+            case R.id.return_scan_result:
                 Log.d(TAG, "Got return scan result message");
-//          activity.setResult(Activity.RESULT_OK, (Intent) message.obj);
-//          activity.finish();
+                activity.setResult(Activity.RESULT_OK, (Intent) message.obj);
+                activity.finish();
                 break;
             case R.id.launch_product_query:
                 Log.d(TAG, "Got product query message");
@@ -151,33 +154,33 @@ public final class CaptureActivityHandler extends Handler {
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
                 intent.setData(Uri.parse(url));
 
-//          /**
-//           * 這段代碼是zxing項目組想要用chrome打開流覽器流覽url
-//           */
-//          ResolveInfo resolveInfo = activity.getPackageManager()
-//                .resolveActivity(intent,
-//                      PackageManager.MATCH_DEFAULT_ONLY);
-//          String browserPackageName = null;
-//          if (resolveInfo != null && resolveInfo.activityInfo != null) {
-//             browserPackageName = resolveInfo.activityInfo.packageName;
-//             Log.d(TAG, "Using browser in package " + browserPackageName);
-//          }
-//
-//          // Needed for default Android browser / Chrome only apparently
-//          if ("com.android.browser".equals(browserPackageName)
-//                || "com.android.chrome".equals(browserPackageName)) {
-//             intent.setPackage(browserPackageName);
-//             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//             intent.putExtra(Browser.EXTRA_APPLICATION_ID,
-//                   browserPackageName);
-//          }
-//
-//          try {
-//             activity.startActivity(intent);
-//          } catch (ActivityNotFoundException ignored) {
-//             Log.w(TAG, "Can't find anything to handle VIEW of URI "
-//                   + url);
-//          }
+                /**
+                 * 这段代码是zxing项目组想要用chrome打开浏览器浏览url
+                 */
+                ResolveInfo resolveInfo = activity.getPackageManager()
+                        .resolveActivity(intent,
+                                PackageManager.MATCH_DEFAULT_ONLY);
+                String browserPackageName = null;
+                if (resolveInfo != null && resolveInfo.activityInfo != null) {
+                    browserPackageName = resolveInfo.activityInfo.packageName;
+                    Log.d(TAG, "Using browser in package " + browserPackageName);
+                }
+
+                // Needed for default Android browser / Chrome only apparently
+                if ("com.android.browser".equals(browserPackageName)
+                        || "com.android.chrome".equals(browserPackageName)) {
+                    intent.setPackage(browserPackageName);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    intent.putExtra(Browser.EXTRA_APPLICATION_ID,
+                            browserPackageName);
+                }
+
+                try {
+                    activity.startActivity(intent);
+                } catch (ActivityNotFoundException ignored) {
+                    Log.w(TAG, "Can't find anything to handle VIEW of URI "
+                            + url);
+                }
                 break;
         }
     }
@@ -202,19 +205,17 @@ public final class CaptureActivityHandler extends Handler {
     }
 
     /**
-     * 完成一次掃描後，只需要再調用此方法即可
+     * 完成一次扫描后，只需要再调用此方法即可
      */
     private void restartPreviewAndDecode() {
         if (state == State.SUCCESS) {
             state = State.PREVIEW;
 
-            // 向decodeThread綁定的handler（DecodeHandler)發送解碼消息
+            // 向decodeThread绑定的handler（DecodeHandler)发送解码消息
             cameraManager.requestPreviewFrame(decodeThread.getHandler(),
                     R.id.decode);
-            //FIXME
             activity.drawViewfinder();
         }
-	}
+    }
 
 }
-

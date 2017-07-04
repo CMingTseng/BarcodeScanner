@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.hugo.android.scanner;
+package cn.hugo.android.scanner.utils;
 
 import android.app.Activity;
 import android.content.DialogInterface;

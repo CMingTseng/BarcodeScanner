@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.hugo.android.scanner;
+package cn.hugo.android.scanner.utils;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -32,29 +32,29 @@ import cn.hugo.android.scanner.common.Runnable;
  * power. <br/>
  * <br/>
  *
- * 該活動監控器全程監控掃描活躍狀態，與CaptureActivity生命週期相同
+ * 该活动监控器全程监控扫描活跃状态，与CaptureActivity生命周期相同
  */
-final class InactivityTimer {
+public class InactivityTimer {
 
     private static final String TAG = InactivityTimer.class.getSimpleName();
 
     /**
-     * 如果在5min內掃描器沒有被使用過，則自動finish掉activity
+     * 如果在5min内扫描器没有被使用过，则自动finish掉activity
      */
     private static final long INACTIVITY_DELAY_MS = 5 * 60 * 1000L;
 
     /**
-     * 在本app中，此activity即為CaptureActivity
+     * 在本app中，此activity即为CaptureActivity
      */
     private final Activity activity;
     /**
-     * 接受系統廣播：手機是否連通電源
+     * 接受系统广播：手机是否连通电源
      */
     private final BroadcastReceiver powerStatusReceiver;
     private boolean registered;
     private AsyncTask<?, ?, ?> inactivityTask;
 
-    InactivityTimer(Activity activity) {
+    public InactivityTimer(Activity activity) {
         this.activity = activity;
         powerStatusReceiver = new PowerStatusReceiver();
         registered = false;
@@ -62,9 +62,9 @@ final class InactivityTimer {
     }
 
     /**
-     * 首先終止之前的監控任務，然後新起一個監控任務
+     * 首先终止之前的监控任务，然后新起一个监控任务
      */
-    synchronized void onActivity() {
+    public synchronized void onActivity() {
         cancel();
         inactivityTask = new InactivityAsyncTask();
         Runnable.execAsync(inactivityTask);
@@ -92,9 +92,9 @@ final class InactivityTimer {
     }
 
     /**
-     * 取消監控任務
+     * 取消监控任务
      */
-    private synchronized void cancel() {
+    public synchronized void cancel() {
         AsyncTask<?, ?, ?> task = inactivityTask;
         if (task != null) {
             task.cancel(true);
@@ -102,12 +102,12 @@ final class InactivityTimer {
         }
     }
 
-    void shutdown() {
+    public void shutdown() {
         cancel();
     }
 
     /**
-     * 監聽是否連通電源的系統廣播。如果連通電源，則停止監控任務，否則重啟監控任務
+     * 监听是否连通电源的系统广播。如果连通电源，则停止监控任务，否则重启监控任务
      */
     private final class PowerStatusReceiver extends BroadcastReceiver {
         @Override
@@ -126,7 +126,7 @@ final class InactivityTimer {
     }
 
     /**
-     * 該任務很簡單，就是在INACTIVITY_DELAY_MS時間後終結activity
+     * 该任务很简单，就是在INACTIVITY_DELAY_MS时间后终结activity
      */
     private final class InactivityAsyncTask extends
             AsyncTask<Object, Object, Object> {
@@ -139,9 +139,8 @@ final class InactivityTimer {
             } catch (InterruptedException e) {
                 // continue without killing
             }
-			return null;
-		}
-	}
+            return null;
+        }
+    }
 
 }
-
